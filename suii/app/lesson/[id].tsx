@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { FadeIn, FadeOut, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useApp } from '../../contexts/AppContext';
 import { playCompletionSound, playUnitCompleteSound } from '../../utils/audio';
 
@@ -194,27 +194,27 @@ const phrases: Phrase[] = [
 type LessonStep = 'conversation' | 'phrase-breakdown' | 'multiple-choice-1' | 'multiple-choice-2' | 'sentence-builder' | 'vocab-match' | 'completion';
 
 /**
- * Encouragement message component with animation
- * Displays at the top of the screen when user gets a question right
+ * Encouragement message component with slide animation
+ * Displays as a floating overlay that slides in from top and slides away
  */
 const EncouragementMessage = ({
     message,
-    scale,
+    translateY,
     opacity
 }: {
     message: string;
-    scale: any;
+    translateY: any;
     opacity: any;
 }) => {
     const animatedStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: scale.value }],
+        transform: [{ translateY: translateY.value }],
         opacity: opacity.value,
     }));
 
     if (!message) return null;
 
     return (
-        <Animated.View style={[styles.encouragementTopContainer, animatedStyle]}>
+        <Animated.View style={[styles.encouragementFloatingContainer, animatedStyle]}>
             <Text style={styles.encouragementText}>{message}</Text>
         </Animated.View>
     );
@@ -223,7 +223,7 @@ const EncouragementMessage = ({
 export default function LessonDetailScreen() {
     const router = useRouter();
     const { id } = useLocalSearchParams<{ id: string }>();
-    const { completeLesson } = useApp();
+    const { completeLesson, userProgress } = useApp();
     const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
     const [currentStep, setCurrentStep] = useState<LessonStep>('conversation');
     const [displayedMessages, setDisplayedMessages] = useState<number>(0);
@@ -239,20 +239,23 @@ export default function LessonDetailScreen() {
     const [scrambledMongolian, setScrambledMongolian] = useState<string[]>([]);
     const [encouragementMessage, setEncouragementMessage] = useState<string>('');
 
-    // Animation values for encouraging message
-    const encouragementScale = useSharedValue(0);
+    // Animation values for encouraging message - slide in from top and slide away
     const encouragementOpacity = useSharedValue(0);
+    const encouragementTranslateY = useSharedValue(-100);
+
+    // Track timeout references to clear them properly
+    const encouragementTimeoutRef = useRef<number | null>(null);
 
     // Encouraging messages to show when user gets questions right
     const encouragementMessages = [
-        "Excellent! 🎉",
-        "Perfect! You're doing great! ⭐",
-        "Amazing work! Keep it up! 💪",
-        "Outstanding! You're a star! ✨",
-        "Fantastic! You're on fire! 🔥",
-        "Brilliant! Well done! 👏",
-        "Superb! You're incredible! 🌟",
-        "Wonderful! Keep going! 🚀"
+        "Ga! ",
+        "Ymr aimar chachva",
+        "Amazing aimr  ",
+        "Aimar lalar ve ",
+        "puuuza",
+        "goy naasnaa ",
+        "naashin mundaginn",
+        "Deer chin sheene shuu "
     ];
 
     const currentPhrase = phrases[currentPhraseIndex];
@@ -290,9 +293,25 @@ export default function LessonDetailScreen() {
             setSelectedWords([]);
             setSelectedWordIndices([]);
             setIsCorrect(null);
+            // Clear any pending timeouts
+            if (encouragementTimeoutRef.current) {
+                clearTimeout(encouragementTimeoutRef.current);
+                encouragementTimeoutRef.current = null;
+            }
             setEncouragementMessage(''); // Reset encouragement message
+            encouragementTranslateY.value = -100; // Reset animation
+            encouragementOpacity.value = 0; // Reset opacity
         }
     }, [currentStep, currentPhraseIndex]);
+
+    // Cleanup timeouts on unmount
+    useEffect(() => {
+        return () => {
+            if (encouragementTimeoutRef.current) {
+                clearTimeout(encouragementTimeoutRef.current);
+            }
+        };
+    }, []);
 
     // Scramble vocab words when entering vocab match
     useEffect(() => {
@@ -344,6 +363,15 @@ export default function LessonDetailScreen() {
      * Manages state transitions between different lesson steps
      */
     const handleNext = () => {
+        // Clear any pending encouragement timeouts when moving to next step
+        if (encouragementTimeoutRef.current) {
+            clearTimeout(encouragementTimeoutRef.current);
+            encouragementTimeoutRef.current = null;
+        }
+        setEncouragementMessage('');
+        encouragementTranslateY.value = -100;
+        encouragementOpacity.value = 0;
+
         if (currentStep === 'conversation') {
             // Move from conversation to phrase breakdown
             setCurrentStep('phrase-breakdown');
@@ -401,17 +429,37 @@ export default function LessonDetailScreen() {
         setIsCorrect(correct);
 
         if (correct) {
+            // Clear any existing timeout
+            if (encouragementTimeoutRef.current) {
+                clearTimeout(encouragementTimeoutRef.current);
+            }
+
             // Play completion sound for correct answer
             playCompletionSound();
-            // Show random encouraging message with animation
+            // Show random encouraging message with slide animation
             const randomMessage = encouragementMessages[Math.floor(Math.random() * encouragementMessages.length)];
             setEncouragementMessage(randomMessage);
-            // Animate encouragement message
-            encouragementScale.value = withSpring(1, { damping: 10, stiffness: 100 });
-            encouragementOpacity.value = withTiming(1, { duration: 300 });
+
+            // Slide in animation - comes from top
+            encouragementTranslateY.value = withTiming(0, { duration: 400 });
+            encouragementOpacity.value = withTiming(1, { duration: 400 });
+
+            // Auto-dismiss after 2 seconds - slides away
+            encouragementTimeoutRef.current = setTimeout(() => {
+                encouragementTranslateY.value = withTiming(-100, { duration: 300 });
+                encouragementOpacity.value = withTiming(0, { duration: 300 });
+                // Clear message after a short delay to let animation complete
+                setTimeout(() => {
+                    setEncouragementMessage('');
+                }, 350);
+            }, 2000);
         } else {
+            // Clear any existing timeout
+            if (encouragementTimeoutRef.current) {
+                clearTimeout(encouragementTimeoutRef.current);
+            }
             setEncouragementMessage(''); // Clear message on incorrect answer
-            encouragementScale.value = withTiming(0, { duration: 200 });
+            encouragementTranslateY.value = withTiming(-100, { duration: 200 });
             encouragementOpacity.value = withTiming(0, { duration: 200 });
         }
     };
@@ -468,21 +516,47 @@ export default function LessonDetailScreen() {
         setIsCorrect(correct);
 
         if (correct) {
+            // Clear any existing timeout
+            if (encouragementTimeoutRef.current) {
+                clearTimeout(encouragementTimeoutRef.current);
+            }
+
             // Play completion sound for correct answer
             playCompletionSound();
-            // Show random encouraging message with animation
+            // Show random encouraging message with slide animation
             const randomMessage = encouragementMessages[Math.floor(Math.random() * encouragementMessages.length)];
             setEncouragementMessage(randomMessage);
-            // Animate encouragement message
-            encouragementScale.value = withSpring(1, { damping: 10, stiffness: 100 });
-            encouragementOpacity.value = withTiming(1, { duration: 300 });
+
+            // Slide in animation - comes from top
+            encouragementTranslateY.value = withTiming(0, { duration: 400 });
+            encouragementOpacity.value = withTiming(1, { duration: 400 });
+
+            // Auto-dismiss after 2 seconds - slides away
+            encouragementTimeoutRef.current = setTimeout(() => {
+                encouragementTranslateY.value = withTiming(-100, { duration: 300 });
+                encouragementOpacity.value = withTiming(0, { duration: 300 });
+                // Clear message after a short delay to let animation complete
+                setTimeout(() => {
+                    setEncouragementMessage('');
+                }, 350);
+            }, 2000);
+
             // Wait to show success message, then advance to next step
             setTimeout(() => {
+                // Clear timeout reference before calling handleNext (which also clears it)
+                if (encouragementTimeoutRef.current) {
+                    clearTimeout(encouragementTimeoutRef.current);
+                    encouragementTimeoutRef.current = null;
+                }
                 handleNext();
             }, 2000);
         } else {
+            // Clear any existing timeout
+            if (encouragementTimeoutRef.current) {
+                clearTimeout(encouragementTimeoutRef.current);
+            }
             setEncouragementMessage(''); // Clear message on incorrect answer
-            encouragementScale.value = withTiming(0, { duration: 200 });
+            encouragementTranslateY.value = withTiming(-100, { duration: 200 });
             encouragementOpacity.value = withTiming(0, { duration: 200 });
         }
     };
@@ -521,14 +595,31 @@ export default function LessonDetailScreen() {
 
         // Check if pair is valid and not already matched
         if (pair && !matchedPairs.find(p => p.english === english)) {
+            // Clear any existing timeout
+            if (encouragementTimeoutRef.current) {
+                clearTimeout(encouragementTimeoutRef.current);
+            }
+
             // Play completion sound for correct match
             playCompletionSound();
-            // Show encouraging message with animation
+            // Show encouraging message with slide animation
             const randomMessage = encouragementMessages[Math.floor(Math.random() * encouragementMessages.length)];
             setEncouragementMessage(randomMessage);
-            // Animate encouragement message
-            encouragementScale.value = withSpring(1, { damping: 10, stiffness: 100 });
-            encouragementOpacity.value = withTiming(1, { duration: 300 });
+
+            // Slide in animation - comes from top
+            encouragementTranslateY.value = withTiming(0, { duration: 400 });
+            encouragementOpacity.value = withTiming(1, { duration: 400 });
+
+            // Auto-dismiss after 2 seconds - slides away
+            encouragementTimeoutRef.current = setTimeout(() => {
+                encouragementTranslateY.value = withTiming(-100, { duration: 300 });
+                encouragementOpacity.value = withTiming(0, { duration: 300 });
+                // Clear message after a short delay to let animation complete
+                setTimeout(() => {
+                    setEncouragementMessage('');
+                }, 350);
+            }, 2000);
+
             // Add to matched pairs
             setMatchedPairs([...matchedPairs, pair]);
             setSelectedEnglish(null);
@@ -798,6 +889,8 @@ export default function LessonDetailScreen() {
                                 setSelectedWordIndices([]);
                                 setIsCorrect(null);
                                 setEncouragementMessage('');
+                                encouragementTranslateY.value = -100;
+                                encouragementOpacity.value = 0;
                             }}
                         >
                             <Ionicons name="refresh" size={18} color="#fff" style={styles.retryIcon} />
@@ -899,7 +992,7 @@ export default function LessonDetailScreen() {
 
     return (
         <View style={styles.container}>
-            {/* Fixed position header */}
+            {/* Fixed position header with streak display */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color="#333" />
@@ -910,6 +1003,11 @@ export default function LessonDetailScreen() {
                         Phrase {currentPhraseIndex + 1} of {phrases.length}
                     </Text>
                 </View>
+                {/* Streak display */}
+                <View style={styles.streakContainer}>
+                    <Ionicons name="flame" size={20} color="#FF6B35" />
+                    <Text style={styles.streakText}>{userProgress.streak}</Text>
+                </View>
             </View>
 
             {/* Fixed position progress bar */}
@@ -917,10 +1015,10 @@ export default function LessonDetailScreen() {
                 <View style={[styles.progressBar, { width: `${getProgress()}%` }]} />
             </View>
 
-            {/* Encouraging message at the top with animation */}
+            {/* Encouraging message as floating overlay with slide animation */}
             <EncouragementMessage
                 message={encouragementMessage}
-                scale={encouragementScale}
+                translateY={encouragementTranslateY}
                 opacity={encouragementOpacity}
             />
 
@@ -965,6 +1063,22 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 3,
     },
+    streakContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF5E6',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#FFE0B2',
+    },
+    streakText: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#FF6B35',
+        marginLeft: 4,
+    },
     backButton: {
         marginRight: 16,
     },
@@ -1005,23 +1119,26 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingVertical: 20,
     },
-    // Encouraging message at the top with fixed position
-    encouragementTopContainer: {
+    // Encouraging message as floating overlay - separate from screen content
+    encouragementFloatingContainer: {
         position: 'absolute',
-        top: 124, // Below progress bar
-        left: 0,
-        right: 0,
-        zIndex: 98,
-        paddingVertical: 12,
-        paddingHorizontal: 20,
+        top: 140, // Below header and progress bar
+        left: 20,
+        right: 20,
+        zIndex: 1000, // High z-index to float above everything
+        paddingVertical: 16,
+        paddingHorizontal: 24,
         backgroundColor: '#E8F5E9',
-        borderBottomWidth: 2,
-        borderBottomColor: '#58CC02',
+        borderRadius: 16,
+        borderWidth: 2,
+        borderColor: '#58CC02',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     conversationContainer: {
         flex: 1,
