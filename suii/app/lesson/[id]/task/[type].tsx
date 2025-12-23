@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Animated, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useApp } from '../../../../contexts/AppContext';
+import { playCompletionSound, playUnitCompleteSound } from '../../../../utils/audio';
 
 type TaskType = 'sentence-builder' | 'vocabulary-match' | 'chat-bot';
 
@@ -67,9 +68,9 @@ const vocabMatchTasks: VocabMatchTask[] = [
 ];
 
 const completionMessages = [
-    "Wow, you're amazing!",
-    "Incredible work! You're a star!",
-    "Perfect! You're doing great!",
+    "Wow, ymr aimr ymbe!",
+    "puuu yg zuv hiitsen najin!",
+    "Galzuu!",
     "Excellent! Keep it up!",
     "Outstanding! You're a natural!",
     "Fantastic! You're on fire!",
@@ -102,12 +103,12 @@ export default function TaskScreen() {
         Animated.sequence([
             Animated.timing(wordAnimations[index], {
                 toValue: 1,
-                duration: 300,
+                duration: 150,
                 useNativeDriver: true,
             }),
             Animated.timing(wordAnimations[index], {
                 toValue: 0,
-                duration: 300,
+                duration: 150,
                 useNativeDriver: true,
             }),
         ]).start();
@@ -132,6 +133,7 @@ export default function TaskScreen() {
         setIsCorrect(correct);
 
         if (correct) {
+            playCompletionSound();
             const randomMessage = completionMessages[Math.floor(Math.random() * completionMessages.length)];
             setCompletionMessage(randomMessage);
             setShowCompletion(true);
@@ -143,6 +145,7 @@ export default function TaskScreen() {
                     setSelectedWords([]);
                     setIsCorrect(null);
                 } else {
+                    playUnitCompleteSound();
                     completeLesson(id || '1');
                     router.back();
                 }
@@ -179,6 +182,7 @@ export default function TaskScreen() {
         const pair = currentTask.pairs.find(p => p.english === english && p.mongolian === mongolian);
 
         if (pair && !matchedPairs.find(p => p.english === english)) {
+            playCompletionSound();
             setMatchedPairs([...matchedPairs, pair]);
             setSelectedEnglish(null);
             setSelectedMongolian(null);
@@ -196,6 +200,7 @@ export default function TaskScreen() {
                         setSelectedEnglish(null);
                         setSelectedMongolian(null);
                     } else {
+                        playUnitCompleteSound();
                         completeLesson(id || '1');
                         router.back();
                     }
@@ -228,6 +233,7 @@ export default function TaskScreen() {
                 setShowCompletion(true);
                 setTimeout(() => {
                     setShowCompletion(false);
+                    playUnitCompleteSound();
                     completeLesson(id || '1');
                     router.back();
                 }, 2000);
