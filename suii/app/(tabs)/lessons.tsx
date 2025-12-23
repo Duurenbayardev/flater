@@ -82,13 +82,17 @@ export default function LessonsScreen() {
         setExpandedSection(expandedSection === sectionId ? null : sectionId);
     };
 
-    const getLessonId = (sectionId: number, unitId: number, lessonNum: number) => {
-        return `${sectionId}-${unitId}-${lessonNum}`;
+    /**
+     * Generate lesson ID from section and unit (format: "sectionId-unitId")
+     * Each unit is a single lesson, no separate lesson numbers
+     */
+    const getLessonId = (sectionId: number, unitId: number) => {
+        return `${sectionId}-${unitId}`;
     };
 
     const getCompletedUnits = (sectionId: number) => {
         return sections[sectionId - 1].units.filter((unit) => {
-            const lessonId = getLessonId(sectionId, unit.id, 1);
+            const lessonId = getLessonId(sectionId, unit.id);
             return userProgress.completedLessons.includes(lessonId);
         }).length;
     };
@@ -99,7 +103,14 @@ export default function LessonsScreen() {
 
     return (
         <View style={styles.container}>
-            <ScrollView style={styles.content}>
+            <ScrollView
+                style={styles.content}
+                contentContainerStyle={{ paddingTop: 110, paddingBottom: 20 }}
+                bounces={false}
+                showsVerticalScrollIndicator={false}
+                decelerationRate="normal"
+                scrollEventThrottle={16}
+            >
                 {sections.map((section) => {
                     const completedUnits = getCompletedUnits(section.id);
                     const totalUnits = getTotalUnits(section.id);
@@ -142,7 +153,7 @@ export default function LessonsScreen() {
                                     entering={FadeInDown.duration(300)}
                                 >
                                     {section.units.map((unit, index) => {
-                                        const lessonId = getLessonId(section.id, unit.id, 1);
+                                        const lessonId = getLessonId(section.id, unit.id);
                                         const isCompleted = userProgress.completedLessons.includes(lessonId);
 
                                         return (
@@ -202,7 +213,6 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         padding: 20,
-        paddingTop: 80,
     },
     sectionCard: {
         backgroundColor: '#fff',

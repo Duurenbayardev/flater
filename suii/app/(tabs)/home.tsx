@@ -90,8 +90,15 @@ export default function HomeScreen() {
     ];
 
     return (
-        <ScrollView style={styles.container}>
-            <View style={styles.header}>
+        <ScrollView
+            style={styles.container}
+            contentContainerStyle={{ paddingTop: 110, paddingBottom: 20 }}
+            bounces={false}
+            showsVerticalScrollIndicator={false}
+            decelerationRate="normal"
+            scrollEventThrottle={16}
+        >
+            <View style={[styles.header, { marginTop: 0, paddingTop: 30 }]}>
                 <View style={styles.headerTop}>
                     <View>
                         <Text style={styles.greeting}>Сайн уу!</Text>
@@ -248,7 +255,7 @@ const styles = StyleSheet.create({
     },
     header: {
         backgroundColor: '#58CC02',
-        paddingTop: 60,
+        paddingTop: 0, // Removed since we have fixed header above
         paddingHorizontal: 20,
         paddingBottom: 30,
     },

@@ -146,7 +146,19 @@ export default function TaskScreen() {
                     setIsCorrect(null);
                 } else {
                     playUnitCompleteSound();
-                    completeLesson(id || '1');
+                    // Collect vocab words from all vocab match tasks
+                    const allVocabWords: Array<{ english: string; mongolian: string }> = [];
+                    vocabMatchTasks.forEach(task => {
+                        task.pairs.forEach(pair => {
+                            if (!allVocabWords.find(p =>
+                                p.english.toLowerCase().trim() === pair.english.toLowerCase().trim() &&
+                                p.mongolian === pair.mongolian
+                            )) {
+                                allVocabWords.push(pair);
+                            }
+                        });
+                    });
+                    completeLesson(id || '1', allVocabWords);
                     router.back();
                 }
             }, 2000);
@@ -201,7 +213,19 @@ export default function TaskScreen() {
                         setSelectedMongolian(null);
                     } else {
                         playUnitCompleteSound();
-                        completeLesson(id || '1');
+                        // Collect vocab words from all vocab match tasks
+                        const allVocabWords: Array<{ english: string; mongolian: string }> = [];
+                        vocabMatchTasks.forEach(task => {
+                            task.pairs.forEach(pair => {
+                                if (!allVocabWords.find(p =>
+                                    p.english.toLowerCase().trim() === pair.english.toLowerCase().trim() &&
+                                    p.mongolian === pair.mongolian
+                                )) {
+                                    allVocabWords.push(pair);
+                                }
+                            });
+                        });
+                        completeLesson(id || '1', allVocabWords);
                         router.back();
                     }
                 }, 2000);
@@ -234,7 +258,8 @@ export default function TaskScreen() {
                 setTimeout(() => {
                     setShowCompletion(false);
                     playUnitCompleteSound();
-                    completeLesson(id || '1');
+                    // For chat bot, we don't have vocab pairs, so pass empty array
+                    completeLesson(id || '1', []);
                     router.back();
                 }, 2000);
             }

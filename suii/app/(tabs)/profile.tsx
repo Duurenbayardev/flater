@@ -36,7 +36,14 @@ export default function ProfileScreen() {
     ];
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView
+            style={styles.container}
+            contentContainerStyle={{ paddingTop: 110, paddingBottom: 20 }}
+            bounces={false}
+            showsVerticalScrollIndicator={false}
+            decelerationRate="normal"
+            scrollEventThrottle={16}
+        >
             <View style={styles.header}>
                 <View style={styles.avatar}>
                     <Ionicons name="person" size={40} color="#58CC02" />
@@ -142,8 +149,9 @@ const styles = StyleSheet.create({
         backgroundColor: '#F5F5F5',
     },
     header: {
+        marginTop: 0,
         alignItems: 'center',
-        paddingTop: 60,
+        paddingTop: 0, // Removed since we have fixed header above
         paddingBottom: 30,
         backgroundColor: '#58CC02',
     },

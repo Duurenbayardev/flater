@@ -61,7 +61,14 @@ export default function GamesScreen() {
     };
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView
+            style={styles.container}
+            contentContainerStyle={{ paddingTop: 110, paddingBottom: 20 }}
+            bounces={false}
+            showsVerticalScrollIndicator={false}
+            decelerationRate="normal"
+            scrollEventThrottle={16}
+        >
             <View style={styles.header}>
                 <Text style={styles.title}>Games</Text>
                 <Text style={styles.subtitle}>Practice with words you've learned</Text>
@@ -126,7 +133,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#F8F9FA',
     },
     header: {
-        paddingTop: 60,
+        marginTop: 0,
+        paddingTop: 0, // Removed since we have fixed header above
         paddingHorizontal: 20,
         paddingBottom: 30,
         backgroundColor: '#58CC02',

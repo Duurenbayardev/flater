@@ -5,191 +5,10 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import Animated, { FadeIn, FadeOut, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useApp } from '../../contexts/AppContext';
 import { playCompletionSound, playUnitCompleteSound } from '../../utils/audio';
+import { getLessonData } from './data';
 
-interface ConversationMessage {
-    speaker: 'A' | 'B';
-    text: string;
-}
 
-interface Phrase {
-    id: number;
-    text: string;
-    translation: string;
-    breakdown: Array<{ word: string; meaning: string }>;
-    words: string[];
-    extraWords: string[];
-    vocabPairs: Array<{ english: string; mongolian: string }>;
-    multipleChoice: Array<{
-        question: string;
-        options: string[];
-        correct: number;
-    }>;
-}
 
-const conversation: ConversationMessage[] = [
-    { speaker: 'A', text: "Hey! Good morning. How are you?" },
-    { speaker: 'B', text: "I'm good. I'm not busy today." },
-    { speaker: 'A', text: "Nice! but I'm a little tired." },
-    { speaker: 'B', text: "I'm not tired. I feel energetic." },
-    { speaker: 'A', text: "Good for you" },
-];
-
-const phrases: Phrase[] = [
-    {
-        id: 1,
-        text: "Hey! Good morning. How are you?",
-        translation: "Сайн уу! Өглөөний мэнд. Та яаж байна?",
-        breakdown: [
-            { word: "Hey", meaning: "Сайн уу" },
-            { word: "Good morning", meaning: "Өглөөний мэнд" },
-            { word: "How are you?", meaning: "Та яаж байна?" },
-        ],
-        words: ["Hey", "Good", "morning", "How", "are", "you"],
-        extraWords: ["Hello", "Hi"],
-        vocabPairs: [
-            { english: "Hey", mongolian: "Сайн уу" },
-            { english: "Good morning", mongolian: "Өглөөний мэнд" },
-            { english: "How are you", mongolian: "Та яаж байна" },
-            { english: "Good", mongolian: "Сайн" },
-        ],
-        multipleChoice: [
-            {
-                question: "What does 'Good morning' mean?",
-                options: ["Өглөөний мэнд", "Сайн уу", "Баяртай", "Баярлалаа"],
-                correct: 0,
-            },
-            {
-                question: "What does 'How' mean?",
-                options: ["яаж", "Сайн", "Өглөө", "та"],
-                correct: 0,
-            },
-        ],
-    },
-    {
-        id: 2,
-        text: "I'm good. I'm not busy today.",
-        translation: "Би сайн байна. Өнөөдөр би завгүй биш.",
-        breakdown: [
-            { word: "I'm", meaning: "Би" },
-            { word: "good", meaning: "сайн" },
-            { word: "not busy", meaning: "завгүй биш" },
-            { word: "today", meaning: "өнөөдөр" },
-        ],
-        words: ["I'm", "good", "I'm", "not", "busy", "today"],
-        extraWords: ["I", "am"],
-        vocabPairs: [
-            { english: "I'm", mongolian: "Би" },
-            { english: "good", mongolian: "сайн" },
-            { english: "busy", mongolian: "завгүй" },
-            { english: "today", mongolian: "өнөөдөр" },
-        ],
-        multipleChoice: [
-            {
-                question: "What does 'busy' mean?",
-                options: ["сайн", "завгүй", "өнөөдөр", "би"],
-                correct: 1,
-            },
-            {
-                question: "What does 'today' mean?",
-                options: ["сайн", "завгүй", "өнөөдөр", "биш"],
-                correct: 2,
-            },
-        ],
-    },
-    {
-        id: 3,
-        text: "Nice! but I'm a little tired.",
-        translation: "Сайн байна! Гэхдээ би бага зэрэг ядарсан байна.",
-        breakdown: [
-            { word: "Nice", meaning: "Сайн байна" },
-            { word: "but", meaning: "гэхдээ" },
-            { word: "I'm", meaning: "би" },
-            { word: "a little", meaning: "бага зэрэг" },
-            { word: "tired", meaning: "ядарсан" },
-        ],
-        words: ["Nice", "but", "I'm", "a", "little", "tired"],
-        extraWords: ["I", "am"],
-        vocabPairs: [
-            { english: "Nice", mongolian: "Сайн байна" },
-            { english: "but", mongolian: "гэхдээ" },
-            { english: "tired", mongolian: "ядарсан" },
-            { english: "little", mongolian: "бага" },
-        ],
-        multipleChoice: [
-            {
-                question: "What does 'tired' mean?",
-                options: ["ядарсан", "сайн", "гэхдээ", "бага"],
-                correct: 0,
-            },
-            {
-                question: "What does 'but' mean?",
-                options: ["Сайн байна", "гэхдээ", "бага", "ядарсан"],
-                correct: 1,
-            },
-        ],
-    },
-    {
-        id: 4,
-        text: "I'm not tired. I feel energetic.",
-        translation: "Би ядарсангүй. Би эрч хүчтэй мэдэрч байна.",
-        breakdown: [
-            { word: "I'm not", meaning: "Би ... биш" },
-            { word: "tired", meaning: "ядарсан" },
-            { word: "I feel", meaning: "Би мэдэрч байна" },
-            { word: "energetic", meaning: "эрч хүчтэй" },
-        ],
-        words: ["I'm", "not", "tired", "I", "feel", "energetic"],
-        extraWords: ["am", "I"],
-        vocabPairs: [
-            { english: "tired", mongolian: "ядарсан" },
-            { english: "feel", mongolian: "мэдрэх" },
-            { english: "energetic", mongolian: "эрч хүчтэй" },
-            { english: "not", mongolian: "биш" },
-        ],
-        multipleChoice: [
-            {
-                question: "What does 'energetic' mean?",
-                options: ["ядарсан", "эрч хүчтэй", "мэдрэх", "биш"],
-                correct: 1,
-            },
-            {
-                question: "What does 'feel' mean?",
-                options: ["ядарсан", "мэдрэх", "эрч хүчтэй", "биш"],
-                correct: 1,
-            },
-        ],
-    },
-    {
-        id: 5,
-        text: "Good for you",
-        translation: "Таны хувьд сайн байна",
-        breakdown: [
-            { word: "Good", meaning: "Сайн" },
-            { word: "for", meaning: "хувьд" },
-            { word: "you", meaning: "та" },
-        ],
-        words: ["Good", "for", "you"],
-        extraWords: ["I", "am"],
-        vocabPairs: [
-            { english: "Good", mongolian: "Сайн" },
-            { english: "for", mongolian: "хувьд" },
-            { english: "you", mongolian: "та" },
-            { english: "Good for you", mongolian: "Таны хувьд сайн" },
-        ],
-        multipleChoice: [
-            {
-                question: "What does 'for' mean?",
-                options: ["сайн", "хувьд", "та", "би"],
-                correct: 1,
-            },
-            {
-                question: "What does 'Good for you' mean?",
-                options: ["Сайн", "хувьд", "та", "Таны хувьд сайн"],
-                correct: 3,
-            },
-        ],
-    },
-];
 
 type LessonStep = 'conversation' | 'phrase-breakdown' | 'multiple-choice-1' | 'multiple-choice-2' | 'sentence-builder' | 'vocab-match' | 'completion';
 
@@ -224,6 +43,11 @@ export default function LessonDetailScreen() {
     const router = useRouter();
     const { id } = useLocalSearchParams<{ id: string }>();
     const { completeLesson, userProgress } = useApp();
+
+    // Load lesson data based on ID
+    const lessonData = id ? getLessonData(id) : null;
+    const [lessonNotFound, setLessonNotFound] = useState(!lessonData);
+
     const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
     const [currentStep, setCurrentStep] = useState<LessonStep>('conversation');
     const [displayedMessages, setDisplayedMessages] = useState<number>(0);
@@ -257,6 +81,35 @@ export default function LessonDetailScreen() {
         "naashin mundaginn",
         "Deer chin sheene shuu "
     ];
+
+    // Get conversation and phrases from lesson data
+    const conversation = lessonData?.conversation || [];
+    const phrases = lessonData?.phrases || [];
+
+    // Safety check - if no lesson data or no phrases, show not found
+    if (!lessonData || phrases.length === 0) {
+        return (
+            <View style={styles.container}>
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                        <Ionicons name="arrow-back" size={24} color="#fff" />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Lesson</Text>
+                    <View style={{ width: 40 }} />
+                </View>
+                <View style={styles.notFoundContainer}>
+                    <Ionicons name="document-text-outline" size={80} color="#CCCCCC" />
+                    <Text style={styles.notFoundTitle}>Lesson Not Found</Text>
+                    <Text style={styles.notFoundSubtitle}>
+                        This lesson doesn't have any content yet. Please try another lesson.
+                    </Text>
+                    <TouchableOpacity style={styles.backToLessonsButton} onPress={() => router.back()}>
+                        <Text style={styles.backToLessonsButtonText}>Back to Lessons</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    }
 
     const currentPhrase = phrases[currentPhraseIndex];
     const isLastPhrase = currentPhraseIndex === phrases.length - 1;
@@ -316,8 +169,8 @@ export default function LessonDetailScreen() {
     // Scramble vocab words when entering vocab match
     useEffect(() => {
         if (currentStep === 'vocab-match') {
-            const englishWords = [...currentPhrase.vocabPairs.map(p => p.english)];
-            const mongolianWords = [...currentPhrase.vocabPairs.map(p => p.mongolian)];
+            const englishWords = [...currentPhrase.vocabPairs.map((p: { english: string; mongolian: string }) => p.english)];
+            const mongolianWords = [...currentPhrase.vocabPairs.map((p: { english: string; mongolian: string }) => p.mongolian)];
             setScrambledEnglish(englishWords.sort(() => Math.random() - 0.5));
             setScrambledMongolian(mongolianWords.sort(() => Math.random() - 0.5));
             setSelectedEnglish(null);
@@ -591,10 +444,10 @@ export default function LessonDetailScreen() {
      */
     const checkVocabMatch = (english: string, mongolian: string) => {
         // Find if this pair exists in the phrase's vocabulary pairs
-        const pair = currentPhrase.vocabPairs.find(p => p.english === english && p.mongolian === mongolian);
+        const pair = currentPhrase.vocabPairs.find((p: { english: string; mongolian: string }) => p.english === english && p.mongolian === mongolian);
 
         // Check if pair is valid and not already matched
-        if (pair && !matchedPairs.find(p => p.english === english)) {
+        if (pair && !matchedPairs.find((p: { english: string; mongolian: string }) => p.english === english)) {
             // Clear any existing timeout
             if (encouragementTimeoutRef.current) {
                 clearTimeout(encouragementTimeoutRef.current);
@@ -647,8 +500,23 @@ export default function LessonDetailScreen() {
     const handleComplete = () => {
         // Play unit complete sound before completing
         playUnitCompleteSound();
-        // Mark lesson as completed in app context
-        completeLesson(id || '1');
+
+        // Collect all vocab words from all phrases in this lesson
+        const allVocabWords: Array<{ english: string; mongolian: string }> = [];
+        phrases.forEach(phrase => {
+            phrase.vocabPairs.forEach(pair => {
+                // Check if this word pair is already in the array
+                if (!allVocabWords.find(p =>
+                    p.english.toLowerCase().trim() === pair.english.toLowerCase().trim() &&
+                    p.mongolian === pair.mongolian
+                )) {
+                    allVocabWords.push(pair);
+                }
+            });
+        });
+
+        // Mark lesson as completed in app context and track memorized words
+        completeLesson(id || '1', allVocabWords);
         // Navigate back to previous screen
         router.back();
     };
@@ -673,7 +541,7 @@ export default function LessonDetailScreen() {
                     )}
                 </View>
                 <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
-                    {conversation.slice(0, displayedMessages).map((msg, idx) => (
+                    {conversation.slice(0, displayedMessages).map((msg: { speaker: 'A' | 'B'; text: string }, idx: number) => (
                         <View
                             key={idx}
                             style={[
@@ -733,7 +601,7 @@ export default function LessonDetailScreen() {
                 </View>
                 <View style={styles.breakdownSection}>
                     <Text style={styles.breakdownLabel}>Breakdown:</Text>
-                    {currentPhrase.breakdown.map((item, idx) => (
+                    {currentPhrase.breakdown.map((item: { word: string; meaning: string }, idx: number) => (
                         <View key={idx} style={styles.breakdownItem}>
                             <Text style={styles.breakdownWord}>{item.word}</Text>
                             <Text style={styles.breakdownMeaning}>{item.meaning}</Text>
@@ -762,7 +630,7 @@ export default function LessonDetailScreen() {
                 <Text style={styles.mcTitle}>Question {progress} of 2</Text>
                 <Text style={styles.mcQuestion}>{question.question}</Text>
                 <View style={styles.mcOptions}>
-                    {question.options.map((option, idx) => (
+                    {question.options.map((option: string, idx: number) => (
                         <TouchableOpacity
                             key={idx}
                             style={[
@@ -989,6 +857,31 @@ export default function LessonDetailScreen() {
             </Animated.View>
         );
     };
+
+    // Show lesson not found screen if data doesn't exist
+    if (lessonNotFound || !lessonData) {
+        return (
+            <View style={styles.container}>
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                        <Ionicons name="arrow-back" size={24} color="#fff" />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Lesson</Text>
+                    <View style={{ width: 40 }} />
+                </View>
+                <View style={styles.notFoundContainer}>
+                    <Ionicons name="document-text-outline" size={80} color="#CCCCCC" />
+                    <Text style={styles.notFoundTitle}>Lesson Not Found</Text>
+                    <Text style={styles.notFoundSubtitle}>
+                        This lesson doesn't have any content yet. Please try another lesson.
+                    </Text>
+                    <TouchableOpacity style={styles.backToLessonsButton} onPress={() => router.back()}>
+                        <Text style={styles.backToLessonsButtonText}>Back to Lessons</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
@@ -1696,5 +1589,47 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         marginRight: 8,
+    },
+    // Lesson not found styles
+    notFoundContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 40,
+        backgroundColor: '#F8F9FA',
+    },
+    notFoundTitle: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#333',
+        marginTop: 24,
+        marginBottom: 12,
+    },
+    notFoundSubtitle: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+        marginBottom: 40,
+        lineHeight: 24,
+    },
+    backToLessonsButton: {
+        backgroundColor: '#58CC02',
+        paddingVertical: 16,
+        paddingHorizontal: 32,
+        borderRadius: 25,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+    backToLessonsButtonText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginLeft: 8,
     },
 });

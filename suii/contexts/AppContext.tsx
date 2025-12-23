@@ -9,6 +9,7 @@ interface UserProgress {
     streak: number;
     lastPracticeDate: string | null;
     xp: number;
+    memorizedWords: string[]; // Array of unique words user has learned (format: "english|mongolian")
 }
 
 interface AppContextType {
@@ -17,7 +18,7 @@ interface AppContextType {
     isNewSignup: boolean;
     updateProgress: (updates: Partial<UserProgress>) => void;
     completeTest: (level: number) => void;
-    completeLesson: (lessonId: string) => void;
+    completeLesson: (lessonId: string, vocabWords?: Array<{ english: string; mongolian: string }>) => void;
     updateStreak: () => void;
     logout: () => Promise<void>;
     setNewSignup: (value: boolean) => void;
@@ -31,6 +32,7 @@ const defaultProgress: UserProgress = {
     streak: 0,
     lastPracticeDate: null,
     xp: 0,
+    memorizedWords: ['nigger'],
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -50,7 +52,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             const testCompleted = await AsyncStorage.getItem('hasCompletedTest');
 
             if (progress) {
-                setUserProgress(JSON.parse(progress));
+                const parsedProgress = JSON.parse(progress);
+                // Ensure memorizedWords exists (for backward compatibility with old saved data)
+                if (!parsedProgress.memorizedWords) {
+                    parsedProgress.memorizedWords = [];
+                }
+                setUserProgress(parsedProgress);
             }
             if (testCompleted === 'true') {
                 setHasCompletedTest(true);
@@ -82,12 +89,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         AsyncStorage.setItem('hasCompletedTest', 'true');
     };
 
-    const completeLesson = (lessonId: string) => {
+    /**
+     * Complete a lesson and track memorized words
+     * @param lessonId - The lesson ID (format: "sectionId-unitId")
+     * @param vocabWords - Optional array of vocab pairs to add to memorized words
+     */
+    const completeLesson = (lessonId: string, vocabWords?: Array<{ english: string; mongolian: string }>) => {
         if (!userProgress.completedLessons.includes(lessonId)) {
+            // Extract new words from vocab pairs if provided
+            let newMemorizedWords = [...userProgress.memorizedWords];
+            if (vocabWords) {
+                vocabWords.forEach(pair => {
+                    const wordKey = `${pair.english.toLowerCase().trim()}|${pair.mongolian}`;
+                    if (!newMemorizedWords.includes(wordKey)) {
+                        newMemorizedWords.push(wordKey);
+                    }
+                });
+            }
+
             const newProgress = {
                 ...userProgress,
                 completedLessons: [...userProgress.completedLessons, lessonId],
                 xp: userProgress.xp + 10,
+                memorizedWords: newMemorizedWords,
             };
             setUserProgress(newProgress);
             saveProgress(newProgress);
