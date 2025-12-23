@@ -12,9 +12,9 @@ export default function TabsLayout() {
                     backgroundColor: '#fff',
                     borderTopWidth: 1,
                     borderTopColor: '#E5E5E5',
-                    height: 60,
-                    paddingBottom: 8,
-                    paddingTop: 8,
+                    height: 75, // Increased from 60 to make it bigger
+                    paddingBottom: 12, // Increased from 8
+                    paddingTop: 12, // Increased from 8
                 },
             }}
         >
