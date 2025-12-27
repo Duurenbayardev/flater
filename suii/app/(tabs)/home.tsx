@@ -3,8 +3,8 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import Animated, { useAnimatedProps, useSharedValue, withTiming } from 'react-native-reanimated';
-import Svg, { Circle } from 'react-native-svg';
+import Animated, { useAnimatedProps, useAnimatedStyle, useSharedValue, withRepeat, withSpring, withTiming } from 'react-native-reanimated';
+import Svg, { Circle, Defs, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 import { useApp } from '../../contexts/AppContext';
 
 const screenWidth = Dimensions.get('window').width;
@@ -29,26 +29,26 @@ export default function HomeScreen() {
         datasets: [
             {
                 data: [20, 45, 28, 80, 99, 43, 50],
-                color: (opacity = 1) => `rgba(88, 204, 2, ${opacity})`,
+                color: (opacity = 1) => `rgba(200, 172, 214, ${opacity})`,
                 strokeWidth: 3,
             },
         ],
     };
 
     const chartConfig = {
-        backgroundColor: '#fff',
-        backgroundGradientFrom: '#fff',
-        backgroundGradientTo: '#fff',
+        backgroundColor: '#433D8B',
+        backgroundGradientFrom: '#433D8B',
+        backgroundGradientTo: '#433D8B',
         decimalPlaces: 0,
-        color: (opacity = 1) => `rgba(88, 204, 2, ${opacity})`,
-        labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+        color: (opacity = 1) => `rgba(200, 172, 214, ${opacity})`,
+        labelColor: (opacity = 1) => `rgba(200, 172, 214, ${opacity * 0.8})`,
         style: {
-            borderRadius: 16,
+            borderRadius: 14,
         },
         propsForDots: {
-            r: '6',
+            r: '5',
             strokeWidth: '2',
-            stroke: '#58CC02',
+            stroke: '#C8ACD6',
         },
     };
 
@@ -68,7 +68,7 @@ export default function HomeScreen() {
     const sectionProgress = getSectionProgress();
     const progressPercentage = (sectionProgress.completed / sectionProgress.total) * 100;
 
-    const radius = 35;
+    const radius = 28;
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = useSharedValue(circumference);
 
@@ -84,163 +84,235 @@ export default function HomeScreen() {
     });
 
     const recentLessons = [
-        { id: '1-1-1', title: 'Basic Greetings', section: 1, unit: 1 },
-        { id: '1-2-1', title: 'Formal Greetings', section: 1, unit: 2 },
-        { id: '2-1-1', title: 'Check-in', section: 2, unit: 1 },
+        { id: '1-1', title: 'Basic Greetings', section: 1, unit: 1 },
+        { id: '1-2', title: 'Formal Greetings', section: 1, unit: 2 },
+        { id: '1-3', title: 'Check-in', section: 2, unit: 1 },
     ];
+
+    // Animated flame for streak
+    const flameScale = useSharedValue(1);
+    React.useEffect(() => {
+        flameScale.value = withRepeat(
+            withSpring(1.15, { damping: 3, stiffness: 100 }),
+            -1,
+            true
+        );
+    }, []);
+
+    const flameAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: flameScale.value }],
+    }));
 
     return (
         <ScrollView
             style={styles.container}
-            contentContainerStyle={{ paddingTop: 110, paddingBottom: 20 }}
-            bounces={false}
+            contentContainerStyle={{ paddingTop: 110, paddingBottom: 30 }}
+            bounces={true}
             showsVerticalScrollIndicator={false}
-            decelerationRate="normal"
-            scrollEventThrottle={16}
         >
-            <View style={[styles.header, { marginTop: 0, paddingTop: 30 }]}>
-                <View style={styles.headerTop}>
-                    <View>
-                        <Text style={styles.greeting}>Сайн уу!</Text>
-                        <Text style={styles.level}>Level {userProgress.level}</Text>
+            {/* Hero Header with Gradient Background */}
+            <View style={styles.heroHeader}>
+                <View style={styles.heroTop}>
+                    <View style={styles.heroTextContainer}>
+                        <Text style={styles.heroGreeting}>Hellooooo</Text>
+                        <Text style={styles.heroSubtext}>Даалгавраа хийснү чи.</Text>
                     </View>
-                    <View style={styles.streakContainer}>
-                        <Ionicons name="flame" size={28} color="#FF9600" />
-                        <Text style={styles.streak}>{userProgress.streak}</Text>
-                    </View>
+                    <TouchableOpacity
+                        style={styles.streakBadge}
+                        activeOpacity={0.8}
+                    >
+                        <Animated.View style={flameAnimatedStyle}>
+                            <Ionicons name="flame" size={20} color="#C8ACD6" />
+                        </Animated.View>
+                        <View style={styles.streakTextContainer}>
+                            <Text style={styles.streakNumber}>{userProgress.streak}</Text>
+                            <Text style={styles.streakLabel}>Streak</Text>
+                        </View>
+                    </TouchableOpacity>
                 </View>
-                <View style={styles.statsContainer}>
-                    <View style={styles.stat}>
-                        <View style={styles.statIcon}>
-                            <Ionicons name="star" size={24} color="#FFD700" />
-                        </View>
-                        <Text style={styles.statValue}>{userProgress.xp}</Text>
-                        <Text style={styles.statLabel}>XP</Text>
+
+                {/* Stats Cards */}
+                <View style={styles.statsGrid}>
+                    <View style={styles.statCard}>
+                        <Ionicons name="star" size={20} color="#C8ACD6" />
+                        <Text style={styles.statCardValue}>{userProgress.xp}</Text>
+                        <Text style={styles.statCardLabel}>XP</Text>
                     </View>
-                    <View style={styles.stat}>
-                        <View style={styles.statIcon}>
-                            <Ionicons name="book" size={24} color="#58CC02" />
-                        </View>
-                        <Text style={styles.statValue}>{userProgress.completedLessons.length}</Text>
-                        <Text style={styles.statLabel}>Lessons</Text>
+                    <View style={styles.statCard}>
+                        <Ionicons name="book" size={20} color="#C8ACD6" />
+                        <Text style={styles.statCardValue}>{userProgress.completedLessons.length}</Text>
+                        <Text style={styles.statCardLabel}>Lessons</Text>
                     </View>
-                    <View style={styles.stat}>
-                        <View style={styles.statIcon}>
-                            <Ionicons name="flame" size={24} color="#FF9600" />
-                        </View>
-                        <Text style={styles.statValue}>{userProgress.streak}</Text>
-                        <Text style={styles.statLabel}>Streak</Text>
+                    <View style={styles.statCard}>
+                        <Ionicons name="trophy" size={20} color="#C8ACD6" />
+                        <Text style={styles.statCardValue}>Lv.{userProgress.level}</Text>
+                        <Text style={styles.statCardLabel}>Level</Text>
                     </View>
                 </View>
             </View>
 
+            {/* Continue Learning Card - Featured */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Continue Learning</Text>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Continue Learning</Text>
+                    {/* <Text style={styles.sectionSubtitle}>Keep your momentum going! 🚀</Text> */}
+                </View>
                 <TouchableOpacity
-                    style={styles.continueButton}
-                    onPress={() => router.push(`/lesson/${userProgress.currentSection}-${userProgress.currentUnit}-1` as any)}
-                    activeOpacity={0.8}
+                    style={styles.featuredCard}
+                    onPress={() => router.push(`/lesson/${userProgress.currentSection}-${userProgress.currentUnit}` as any)}
+                    activeOpacity={0.9}
                 >
-                    <View style={styles.continueButtonContent}>
-                        <View style={styles.continueLeft}>
-                            <View style={styles.sectionBadge}>
-                                <Ionicons name={currentSection.iconName as any} size={28} color="#58CC02" />
+                    <Svg width="100%" height="100%" style={styles.cardGradient}>
+                        <Defs>
+                            <SvgLinearGradient id="cardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <Stop offset="0%" stopColor="#58CC02" stopOpacity="0.1" />
+                                <Stop offset="100%" stopColor="#4CAF50" stopOpacity="0.05" />
+                            </SvgLinearGradient>
+                        </Defs>
+                        <Circle cx="50%" cy="0%" r="200" fill="url(#cardGradient)" />
+                    </Svg>
+                    <View style={styles.featuredContent}>
+                        <View style={styles.featuredLeft}>
+                            <View style={styles.featuredIconContainer}>
+                                <Ionicons name={currentSection.iconName as any} size={28} color="#C8ACD6" />
                             </View>
-                            <View style={styles.continueText}>
-                                <Text style={styles.continueButtonTitle}>{currentSection.title}</Text>
-                                <Text style={styles.continueButtonSubtitle}>
-                                    {sectionProgress.completed} of {sectionProgress.total} units completed
+                            <View style={styles.featuredText}>
+                                <Text style={styles.featuredTitle}>{currentSection.title}</Text>
+                                <Text style={styles.featuredSubtitle}>
+                                    {sectionProgress.completed}/{sectionProgress.total} units
                                 </Text>
                             </View>
                         </View>
-                        <View style={styles.progressCircleContainer}>
-                            <Svg width={80} height={80}>
+                        <View style={styles.featuredProgress}>
+                            <Svg width={70} height={70}>
                                 <Circle
-                                    cx={40}
-                                    cy={40}
-                                    r={radius}
-                                    stroke="#E5E5E5"
-                                    strokeWidth={8}
+                                    cx={35}
+                                    cy={35}
+                                    r={28}
+                                    stroke="rgba(255, 255, 255, 0.2)"
+                                    strokeWidth={6}
                                     fill="transparent"
                                 />
                                 <AnimatedCircle
-                                    cx={40}
-                                    cy={40}
-                                    r={radius}
-                                    stroke="#58CC02"
-                                    strokeWidth={8}
+                                    cx={35}
+                                    cy={35}
+                                    r={28}
+                                    stroke="#C8ACD6"
+                                    strokeWidth={6}
                                     fill="transparent"
                                     strokeDasharray={circumference}
                                     animatedProps={animatedProps}
                                     strokeLinecap="round"
-                                    transform="rotate(-90 40 40)"
+                                    transform="rotate(-90 35 35)"
                                 />
                             </Svg>
-                            <View style={styles.progressTextContainer}>
-                                <Text style={styles.progressText}>{Math.round(progressPercentage)}%</Text>
+                            <View style={styles.featuredProgressText}>
+                                <Text style={styles.featuredProgressPercent}>{Math.round(progressPercentage)}%</Text>
                             </View>
-                            <Ionicons name="play-circle" size={36} color="#58CC02" style={styles.playIcon} />
+                            <View style={styles.playButton}>
+                                <Ionicons name="play" size={18} color="#433D8B" />
+                            </View>
                         </View>
                     </View>
                 </TouchableOpacity>
             </View>
 
+            {/* Progress Chart - Redesigned */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Your Progress</Text>
-                <View style={styles.chartContainer}>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Weekly Progress</Text>
+                    {/* <Text style={styles.sectionSubtitle}>Your learning journey 📈</Text> */}
+                </View>
+                <View style={styles.chartCard}>
                     <LineChart
                         data={progressData}
                         width={screenWidth - 40}
-                        height={220}
+                        height={200}
                         chartConfig={chartConfig}
                         bezier
                         style={styles.chart}
                         withInnerLines={false}
                         withVerticalLabels={true}
                         withHorizontalLabels={true}
+                        withDots={true}
+                        withShadow={false}
                     />
                 </View>
             </View>
 
+            {/* Quick Access Lessons */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Recent Lessons</Text>
-                {recentLessons.map((lesson) => (
-                    <TouchableOpacity
-                        key={lesson.id}
-                        style={styles.lessonItem}
-                        onPress={() => router.push(`/lesson/${lesson.id}` as any)}
-                        activeOpacity={0.7}
-                    >
-                        <View style={styles.lessonIcon}>
-                            <Ionicons
-                                name={userProgress.completedLessons.includes(lesson.id) ? 'checkmark-circle' : 'play-circle'}
-                                size={28}
-                                color={userProgress.completedLessons.includes(lesson.id) ? '#58CC02' : '#999'}
-                            />
-                        </View>
-                        <View style={styles.lessonContent}>
-                            <Text style={styles.lessonTitle}>{lesson.title}</Text>
-                            <Text style={styles.lessonSubtitle}>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Quick Access</Text>
+                    <TouchableOpacity onPress={() => router.push('/(tabs)/lessons' as any)}>
+                        <Text style={styles.seeAllText}>See All →</Text>
+                    </TouchableOpacity>
+                </View>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.lessonsScroll}
+                >
+                    {recentLessons.map((lesson, index) => (
+                        <TouchableOpacity
+                            key={lesson.id}
+                            style={[styles.lessonCard, index === 0 && styles.lessonCardFirst]}
+                            onPress={() => router.push(`/lesson/${lesson.id}` as any)}
+                            activeOpacity={0.8}
+                        >
+                            <View style={styles.lessonCardHeader}>
+                                <View style={[
+                                    styles.lessonCardIcon,
+                                    userProgress.completedLessons.includes(lesson.id) && styles.lessonCardIconCompleted
+                                ]}>
+                                    <Ionicons
+                                        name={userProgress.completedLessons.includes(lesson.id) ? 'checkmark-circle' : 'play-circle'}
+                                        size={26}
+                                        color="#C8ACD6"
+                                    />
+                                </View>
+                                {userProgress.completedLessons.includes(lesson.id) && (
+                                    <View style={styles.completedBadge}>
+                                        <Ionicons name="checkmark" size={12} color="#fff" />
+                                    </View>
+                                )}
+                            </View>
+                            <Text style={styles.lessonCardTitle}>{lesson.title}</Text>
+                            <Text style={styles.lessonCardSubtitle}>
                                 Section {lesson.section} • Unit {lesson.unit}
                             </Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={20} color="#999" />
-                    </TouchableOpacity>
-                ))}
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
             </View>
 
+            {/* Achievements Section */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>History</Text>
-                <View style={styles.historyContainer}>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Recent Activity</Text>
+                </View>
+                <View style={styles.activityCard}>
                     {userProgress.completedLessons.length > 0 ? (
-                        userProgress.completedLessons.slice(-5).reverse().map((lessonId, index) => (
-                            <View key={index} style={styles.historyItem}>
-                                <Ionicons name="checkmark-circle" size={20} color="#58CC02" />
-                                <Text style={styles.historyText}>Completed: {lessonId}</Text>
-                            </View>
-                        ))
+                        <>
+                            {userProgress.completedLessons.slice(-3).reverse().map((lessonId, index) => (
+                                <View key={index} style={styles.activityItem}>
+                                    <View style={styles.activityIcon}>
+                                        <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
+                                    </View>
+                                    <View style={styles.activityContent}>
+                                        <Text style={styles.activityTitle}>Lesson Completed</Text>
+                                        <Text style={styles.activitySubtitle}>{lessonId}</Text>
+                                    </View>
+                                    <Text style={styles.activityTime}>Today</Text>
+                                </View>
+                            ))}
+                        </>
                     ) : (
-                        <Text style={styles.emptyText}>No lessons completed yet</Text>
+                        <View style={styles.emptyState}>
+                            <Ionicons name="rocket-outline" size={40} color="#C8ACD6" />
+                            <Text style={styles.emptyStateText}>Start your learning journey!</Text>
+                            <Text style={styles.emptyStateSubtext}>Complete your first lesson to see activity here</Text>
+                        </View>
                     )}
                 </View>
             </View>
@@ -251,226 +323,318 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8F9FA',
+        backgroundColor: '#17153B',
     },
-    header: {
-        backgroundColor: '#58CC02',
-        paddingTop: 0, // Removed since we have fixed header above
-        paddingHorizontal: 20,
-        paddingBottom: 30,
+    // Hero Header
+    heroHeader: {
+        backgroundColor: '#2E236C',
+        paddingTop: 16,
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
     },
-    headerTop: {
+    heroTop: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 12,
+    },
+    heroTextContainer: {
+        flex: 1,
+    },
+    heroGreeting: {
+        fontSize: 24,
+        fontWeight: '600',
+        color: '#FFFFFF',
+        marginBottom: 4,
+    },
+    heroSubtext: {
+        fontSize: 13,
+        color: '#FFFFFF',
+        opacity: 0.8,
+        fontWeight: '400',
+    },
+    streakBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#433D8B',
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: 14,
+        gap: 8,
+    },
+    streakTextContainer: {
+        alignItems: 'flex-start',
+    },
+    streakNumber: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#FFFFFF',
+    },
+    streakLabel: {
+        fontSize: 10,
+        color: '#FFFFFF',
+        opacity: 0.8,
+        fontWeight: '600',
+    },
+    // Stats Grid
+    statsGrid: {
+        flexDirection: 'row',
+        gap: 10,
+    },
+    statCard: {
+        flex: 1,
+        backgroundColor: '#433D8B',
+        borderRadius: 14,
+        padding: 14,
+        alignItems: 'center',
+        gap: 8,
+    },
+    statCardValue: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#FFFFFF',
+    },
+    statCardLabel: {
+        fontSize: 10,
+        color: '#FFFFFF',
+        opacity: 0.8,
+        fontWeight: '600',
+    },
+    // Sections
+    section: {
+        paddingHorizontal: 16,
+        marginTop: 16,
+    },
+    sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 24,
-    },
-    greeting: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: '#fff',
-        marginBottom: 4,
-    },
-    level: {
-        fontSize: 18,
-        color: '#fff',
-        opacity: 0.9,
-        fontWeight: '600',
-    },
-    streakContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.25)',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 25,
-        gap: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
-    },
-    streak: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#fff',
-    },
-    statsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        gap: 12,
-    },
-    stat: {
-        flex: 1,
-        alignItems: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        paddingVertical: 16,
-        paddingHorizontal: 12,
-        borderRadius: 16,
-    },
-    statIcon: {
-        marginBottom: 8,
-    },
-    statValue: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#fff',
-        marginBottom: 4,
-    },
-    statLabel: {
-        fontSize: 12,
-        color: '#fff',
-        opacity: 0.9,
-        fontWeight: '600',
-    },
-    section: {
-        padding: 20,
+        marginBottom: 12,
     },
     sectionTitle: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 16,
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#FFFFFF',
     },
-    continueButton: {
-        backgroundColor: '#fff',
-        borderRadius: 24,
-        padding: 24,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.15,
-        shadowRadius: 16,
-        elevation: 8,
+    sectionSubtitle: {
+        fontSize: 12,
+        color: '#C8ACD6',
+        opacity: 0.6,
+        fontWeight: '400',
+        marginTop: 2,
     },
-    continueButtonContent: {
+    seeAllText: {
+        fontSize: 12,
+        color: '#FFFFFF',
+        fontWeight: '600',
+    },
+    // Featured Card
+    featuredCard: {
+        backgroundColor: '#433D8B',
+        borderRadius: 18,
+        padding: 18,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#5A4FA3',
+    },
+    cardGradient: {
+        position: 'absolute',
+        top: -100,
+        right: -100,
+    },
+    featuredContent: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
     },
-    continueLeft: {
+    featuredLeft: {
         flexDirection: 'row',
         alignItems: 'center',
         flex: 1,
     },
-    sectionBadge: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: '#E8F5E9',
+    featuredIconContainer: {
+        width: 52,
+        height: 52,
+        borderRadius: 14,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 16,
+        marginRight: 14,
     },
-    continueText: {
+    featuredText: {
         flex: 1,
     },
-    continueButtonTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#333',
+    featuredTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#FFFFFF',
         marginBottom: 6,
     },
-    continueButtonSubtitle: {
-        fontSize: 14,
-        color: '#999',
+    featuredSubtitle: {
+        fontSize: 13,
+        color: '#FFFFFF',
+        opacity: 0.8,
         fontWeight: '500',
     },
-    progressCircleContainer: {
+    featuredProgress: {
         position: 'relative',
-        width: 80,
-        height: 80,
+        width: 70,
+        height: 70,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    progressTextContainer: {
+    featuredProgressText: {
         position: 'absolute',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    progressText: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: '#58CC02',
+    featuredProgressPercent: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#FFFFFF',
     },
-    playIcon: {
+    playButton: {
         position: 'absolute',
-        bottom: -8,
-        right: -8,
-        backgroundColor: '#fff',
-        borderRadius: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 4,
+        bottom: -4,
+        right: -4,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#C8ACD6',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    chartContainer: {
-        backgroundColor: '#fff',
-        borderRadius: 20,
-        padding: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 4,
+    // Chart Card
+    chartCard: {
+        backgroundColor: '#433D8B',
+        borderRadius: 18,
+        padding: 0,
+        borderWidth: 1,
+        borderColor: '#5A4FA3',
     },
     chart: {
-        borderRadius: 16,
+        borderRadius: 14,
+        marginVertical: 0,
     },
-    lessonItem: {
+    // Lessons Scroll
+    lessonsScroll: {
+        paddingRight: 16,
+        gap: 8,
+    },
+    lessonCard: {
+        width: 150,
+        backgroundColor: '#433D8B',
+        borderRadius: 16,
+        padding: 14,
+        marginRight: 10,
+        borderWidth: 1,
+        borderColor: '#5A4FA3',
+    },
+    lessonCardFirst: {
+        borderColor: '#C8ACD6',
+        backgroundColor: '#5A4FA3',
+    },
+    lessonCardHeader: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 8,
+    },
+    lessonCardIcon: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 18,
-        marginBottom: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 4,
-        elevation: 3,
     },
-    lessonIcon: {
-        marginRight: 16,
+    lessonCardIconCompleted: {
+        backgroundColor: 'rgba(200, 172, 214, 0.3)',
     },
-    lessonContent: {
-        flex: 1,
+    completedBadge: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: '#C8ACD6',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: -6,
+        marginRight: -6,
     },
-    lessonTitle: {
-        fontSize: 16,
+    lessonCardTitle: {
+        fontSize: 15,
         fontWeight: '600',
-        color: '#333',
+        color: '#FFFFFF',
         marginBottom: 4,
     },
-    lessonSubtitle: {
-        fontSize: 14,
-        color: '#999',
+    lessonCardSubtitle: {
+        fontSize: 11,
+        color: '#FFFFFF',
+        opacity: 0.7,
+        fontWeight: '500',
     },
-    historyContainer: {
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 4,
-        elevation: 3,
+    // Activity Card
+    activityCard: {
+        backgroundColor: '#433D8B',
+        borderRadius: 18,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#5A4FA3',
     },
-    historyItem: {
+    activityItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 10,
-        gap: 12,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#5A4FA3',
     },
-    historyText: {
-        fontSize: 14,
-        color: '#333',
+    activityIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 14,
     },
-    emptyText: {
+    activityContent: {
+        flex: 1,
+    },
+    activityTitle: {
         fontSize: 14,
-        color: '#999',
+        fontWeight: '600',
+        color: '#FFFFFF',
+        marginBottom: 3,
+    },
+    activitySubtitle: {
+        fontSize: 12,
+        color: '#FFFFFF',
+        opacity: 0.7,
+        fontWeight: '400',
+    },
+    activityTime: {
+        fontSize: 11,
+        color: '#FFFFFF',
+        opacity: 0.6,
+        fontWeight: '500',
+    },
+    emptyState: {
+        alignItems: 'center',
+        paddingVertical: 32,
+    },
+    emptyStateText: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#FFFFFF',
+        marginTop: 12,
+        marginBottom: 6,
+    },
+    emptyStateSubtext: {
+        fontSize: 12,
+        color: '#FFFFFF',
+        opacity: 0.7,
         textAlign: 'center',
-        paddingVertical: 20,
     },
 });

@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import React from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSpring } from 'react-native-reanimated';
 import { useApp } from '../../contexts/AppContext';
 
 export default function ProfileScreen() {
@@ -29,82 +31,165 @@ export default function ProfileScreen() {
     };
 
     const achievements = [
-        { id: 1, title: 'First Steps', description: 'Complete your first lesson', earned: userProgress.completedLessons.length > 0 },
-        { id: 2, title: 'Week Warrior', description: 'Maintain a 7-day streak', earned: userProgress.streak >= 7 },
-        { id: 3, title: 'Century Club', description: 'Earn 100 XP', earned: userProgress.xp >= 100 },
-        { id: 4, title: 'Dedicated Learner', description: 'Complete 10 lessons', earned: userProgress.completedLessons.length >= 10 },
+        {
+            id: 1,
+            title: 'First Steps',
+            description: 'Complete your first lesson',
+            earned: userProgress.completedLessons.length > 0,
+            icon: 'footsteps',
+            color: '#FF6B9D'
+        },
+        {
+            id: 2,
+            title: 'Week Warrior',
+            description: 'Maintain a 7-day streak',
+            earned: userProgress.streak >= 7,
+            icon: 'flame',
+            color: '#FFE66D'
+        },
+        {
+            id: 3,
+            title: 'Century Club',
+            description: 'Earn 100 XP',
+            earned: userProgress.xp >= 100,
+            icon: 'star',
+            color: '#4ECDC4'
+        },
+        {
+            id: 4,
+            title: 'Dedicated Learner',
+            description: 'Complete 10 lessons',
+            earned: userProgress.completedLessons.length >= 10,
+            icon: 'trophy',
+            color: '#AA96DA'
+        },
     ];
+
+    const earnedAchievements = achievements.filter(a => a.earned).length;
+    const totalAchievements = achievements.length;
+    const achievementProgress = (earnedAchievements / totalAchievements) * 100;
+
+    // Animated flame for streak
+    const flameScale = useSharedValue(1);
+    React.useEffect(() => {
+        if (userProgress.streak > 0) {
+            flameScale.value = withRepeat(
+                withSpring(1.1, { damping: 3, stiffness: 100 }),
+                -1,
+                true
+            );
+        }
+    }, [userProgress.streak]);
+
+    const flameAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: flameScale.value }],
+    }));
 
     return (
         <ScrollView
             style={styles.container}
-            contentContainerStyle={{ paddingTop: 110, paddingBottom: 20 }}
-            bounces={false}
+            contentContainerStyle={{ paddingTop: 110, paddingBottom: 30 }}
             showsVerticalScrollIndicator={false}
-            decelerationRate="normal"
-            scrollEventThrottle={16}
         >
-            <View style={styles.header}>
-                <View style={styles.avatar}>
-                    <Ionicons name="person" size={40} color="#58CC02" />
+            {/* Hero Profile Section */}
+            <View style={styles.heroSection}>
+                <View style={styles.avatarContainer}>
+                    <View style={styles.avatarRing}>
+                        <View style={styles.avatar}>
+                            <Ionicons name="person" size={40} color="#FFFFFF" />
+                        </View>
+                    </View>
+                    <View style={styles.levelBadge}>
+                        <Text style={styles.levelBadgeText}>Lv.{userProgress.level}</Text>
+                    </View>
                 </View>
-                <Text style={styles.name}>Language Learner</Text>
-                <Text style={styles.level}>Level {userProgress.level}</Text>
+                <Text style={styles.userName}>Language Learner</Text>
+                <Text style={styles.userSubtitle}>Keep up the great work! 🎯</Text>
             </View>
 
+            {/* Stats Grid */}
             <View style={styles.statsSection}>
                 <View style={styles.statCard}>
-                    <Ionicons name="flame" size={32} color="#FF9600" />
+                    <View style={[styles.statIconContainer, { backgroundColor: 'rgba(255, 107, 157, 0.2)' }]}>
+                        <Animated.View style={flameAnimatedStyle}>
+                            <Ionicons name="flame" size={24} color="#FF6B9D" />
+                        </Animated.View>
+                    </View>
                     <Text style={styles.statValue}>{userProgress.streak}</Text>
                     <Text style={styles.statLabel}>Day Streak</Text>
                 </View>
                 <View style={styles.statCard}>
-                    <Ionicons name="star" size={32} color="#FFD700" />
+                    <View style={[styles.statIconContainer, { backgroundColor: 'rgba(78, 205, 196, 0.2)' }]}>
+                        <Ionicons name="star" size={24} color="#4ECDC4" />
+                    </View>
                     <Text style={styles.statValue}>{userProgress.xp}</Text>
                     <Text style={styles.statLabel}>Total XP</Text>
                 </View>
                 <View style={styles.statCard}>
-                    <Ionicons name="checkmark-circle" size={32} color="#58CC02" />
+                    <View style={[styles.statIconContainer, { backgroundColor: 'rgba(170, 150, 218, 0.2)' }]}>
+                        <Ionicons name="book" size={24} color="#AA96DA" />
+                    </View>
                     <Text style={styles.statValue}>{userProgress.completedLessons.length}</Text>
                     <Text style={styles.statLabel}>Lessons</Text>
                 </View>
             </View>
 
+            {/* Learning Progress */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Progress</Text>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Learning Progress</Text>
+                </View>
                 <View style={styles.progressCard}>
-                    <View style={styles.progressRow}>
-                        <Text style={styles.progressLabel}>Current Section</Text>
-                        <Text style={styles.progressValue}>Section {userProgress.currentSection}</Text>
+                    <View style={styles.progressItem}>
+                        <View style={styles.progressItemLeft}>
+                            <Ionicons name="bookmark" size={20} color="#C8ACD6" />
+                            <Text style={styles.progressItemLabel}>Current Section</Text>
+                        </View>
+                        <Text style={styles.progressItemValue}>Section {userProgress.currentSection}</Text>
                     </View>
-                    <View style={styles.progressRow}>
-                        <Text style={styles.progressLabel}>Current Unit</Text>
-                        <Text style={styles.progressValue}>Unit {userProgress.currentUnit}</Text>
+                    <View style={styles.progressDivider} />
+                    <View style={styles.progressItem}>
+                        <View style={styles.progressItemLeft}>
+                            <Ionicons name="layers" size={20} color="#C8ACD6" />
+                            <Text style={styles.progressItemLabel}>Current Unit</Text>
+                        </View>
+                        <Text style={styles.progressItemValue}>Unit {userProgress.currentUnit}</Text>
                     </View>
                 </View>
             </View>
 
+            {/* Achievements Section */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Achievements</Text>
-                {achievements.map((achievement) => (
-                    <View
-                        key={achievement.id}
-                        style={[
-                            styles.achievementCard,
-                            !achievement.earned && styles.achievementCardLocked,
-                        ]}
-                    >
-                        <View style={[
-                            styles.achievementIcon,
-                            !achievement.earned && styles.achievementIconLocked,
-                        ]}>
-                            <Ionicons
-                                name={achievement.earned ? 'trophy' : 'lock-closed'}
-                                size={24}
-                                color={achievement.earned ? '#FFD700' : '#999'}
-                            />
-                        </View>
-                        <View style={styles.achievementContent}>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Achievements</Text>
+                    <Text style={styles.sectionSubtitle}>{earnedAchievements}/{totalAchievements}</Text>
+                </View>
+                <View style={styles.achievementProgressCard}>
+                    <View style={styles.achievementProgressBar}>
+                        <View style={[styles.achievementProgressFill, { width: `${achievementProgress}%` }]} />
+                    </View>
+                    <Text style={styles.achievementProgressText}>{Math.round(achievementProgress)}% Complete</Text>
+                </View>
+                <View style={styles.achievementsGrid}>
+                    {achievements.map((achievement) => (
+                        <TouchableOpacity
+                            key={achievement.id}
+                            style={[
+                                styles.achievementCard,
+                                achievement.earned && styles.achievementCardEarned,
+                            ]}
+                            activeOpacity={0.8}
+                        >
+                            <View style={[
+                                styles.achievementIconContainer,
+                                achievement.earned && { backgroundColor: `${achievement.color}20` }
+                            ]}>
+                                <Ionicons
+                                    name={achievement.earned ? achievement.icon as any : 'lock-closed'}
+                                    size={32}
+                                    color={achievement.earned ? achievement.color : '#433D8B'}
+                                />
+                            </View>
                             <Text style={[
                                 styles.achievementTitle,
                                 !achievement.earned && styles.achievementTitleLocked,
@@ -114,30 +199,56 @@ export default function ProfileScreen() {
                             <Text style={styles.achievementDescription}>
                                 {achievement.description}
                             </Text>
-                        </View>
-                        {achievement.earned && (
-                            <Ionicons name="checkmark-circle" size={24} color="#58CC02" />
-                        )}
-                    </View>
-                ))}
+                            {achievement.earned && (
+                                <View style={styles.achievementBadge}>
+                                    <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    ))}
+                </View>
             </View>
 
+            {/* Settings Section */}
             <View style={styles.section}>
-                <TouchableOpacity style={styles.settingsButton}>
-                    <Ionicons name="settings" size={24} color="#333" />
-                    <Text style={styles.settingsText}>Settings</Text>
-                    <Ionicons name="chevron-forward" size={20} color="#999" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.settingsButton}>
-                    <Ionicons name="help-circle" size={24} color="#333" />
-                    <Text style={styles.settingsText}>Help & Support</Text>
-                    <Ionicons name="chevron-forward" size={20} color="#999" />
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.settingsButton, styles.logoutButton]} onPress={handleLogout}>
-                    <Ionicons name="log-out" size={24} color="#FF3B30" />
-                    <Text style={[styles.settingsText, styles.logoutText]}>Logout</Text>
-                    <Ionicons name="chevron-forward" size={20} color="#FF3B30" />
-                </TouchableOpacity>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Settings</Text>
+                </View>
+                <View style={styles.settingsCard}>
+                    <TouchableOpacity style={styles.settingsItem} activeOpacity={0.7}>
+                        <View style={styles.settingsItemLeft}>
+                            <View style={[styles.settingsIconContainer, { backgroundColor: 'rgba(200, 172, 214, 0.2)' }]}>
+                                <Ionicons name="settings" size={22} color="#C8ACD6" />
+                            </View>
+                            <Text style={styles.settingsItemText}>Settings</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color="#433D8B" />
+                    </TouchableOpacity>
+                    <View style={styles.settingsDivider} />
+                    <TouchableOpacity style={styles.settingsItem} activeOpacity={0.7}>
+                        <View style={styles.settingsItemLeft}>
+                            <View style={[styles.settingsIconContainer, { backgroundColor: 'rgba(200, 172, 214, 0.2)' }]}>
+                                <Ionicons name="help-circle" size={22} color="#C8ACD6" />
+                            </View>
+                            <Text style={styles.settingsItemText}>Help & Support</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color="#433D8B" />
+                    </TouchableOpacity>
+                    <View style={styles.settingsDivider} />
+                    <TouchableOpacity
+                        style={styles.settingsItem}
+                        onPress={handleLogout}
+                        activeOpacity={0.7}
+                    >
+                        <View style={styles.settingsItemLeft}>
+                            <View style={[styles.settingsIconContainer, { backgroundColor: 'rgba(255, 107, 157, 0.2)' }]}>
+                                <Ionicons name="log-out" size={22} color="#FF6B9D" />
+                            </View>
+                            <Text style={[styles.settingsItemText, styles.logoutText]}>Logout</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color="#433D8B" />
+                    </TouchableOpacity>
+                </View>
             </View>
         </ScrollView>
     );
@@ -146,172 +257,281 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F5F5F5',
+        backgroundColor: '#17153B',
     },
-    header: {
-        marginTop: 0,
+    // Hero Section
+    heroSection: {
         alignItems: 'center',
-        paddingTop: 0, // Removed since we have fixed header above
+        paddingTop: 20,
         paddingBottom: 30,
-        backgroundColor: '#58CC02',
+        backgroundColor: '#2E236C',
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
     },
-    avatar: {
+    avatarContainer: {
+        position: 'relative',
+        marginBottom: 16,
+    },
+    avatarRing: {
         width: 100,
         height: 100,
         borderRadius: 50,
-        backgroundColor: '#fff',
+        backgroundColor: 'rgba(200, 172, 214, 0.2)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 16,
+        borderWidth: 3,
+        borderColor: '#C8ACD6',
     },
-    name: {
+    avatar: {
+        width: 84,
+        height: 84,
+        borderRadius: 42,
+        backgroundColor: '#433D8B',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    levelBadge: {
+        position: 'absolute',
+        bottom: -4,
+        right: -4,
+        backgroundColor: '#C8ACD6',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: '#17153B',
+    },
+    levelBadgeText: {
+        fontSize: 12,
+        fontWeight: '800',
+        color: '#17153B',
+    },
+    userName: {
         fontSize: 24,
-        fontWeight: 'bold',
-        color: '#fff',
-        marginBottom: 8,
+        fontWeight: '700',
+        color: '#FFFFFF',
+        marginBottom: 6,
     },
-    level: {
-        fontSize: 16,
-        color: '#fff',
-        opacity: 0.9,
+    userSubtitle: {
+        fontSize: 14,
+        color: '#FFFFFF',
+        opacity: 0.8,
     },
+    // Stats Section
     statsSection: {
         flexDirection: 'row',
-        padding: 20,
+        paddingHorizontal: 16,
+        paddingTop: 20,
         gap: 12,
-        marginTop: -20,
+        marginTop: 0,
     },
     statCard: {
         flex: 1,
-        backgroundColor: '#fff',
-        borderRadius: 12,
+        backgroundColor: '#2E236C',
+        borderRadius: 18,
         padding: 16,
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        borderWidth: 1,
+        borderColor: '#433D8B',
+    },
+    statIconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 10,
     },
     statValue: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#333',
-        marginTop: 8,
+        fontSize: 20,
+        fontWeight: '800',
+        color: '#FFFFFF',
         marginBottom: 4,
     },
     statLabel: {
-        fontSize: 12,
-        color: '#999',
+        fontSize: 11,
+        color: '#FFFFFF',
+        opacity: 0.7,
+        fontWeight: '500',
     },
+    // Sections
     section: {
-        padding: 20,
+        paddingHorizontal: 16,
+        marginTop: 24,
     },
-    sectionTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 16,
-    },
-    progressCard: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    progressRow: {
+    sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E5E5E5',
+        marginBottom: 16,
     },
-    progressLabel: {
-        fontSize: 16,
-        color: '#333',
+    sectionTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#FFFFFF',
     },
-    progressValue: {
-        fontSize: 16,
+    sectionSubtitle: {
+        fontSize: 14,
+        color: '#FFFFFF',
+        opacity: 0.7,
         fontWeight: '600',
-        color: '#58CC02',
+    },
+    // Progress Card
+    progressCard: {
+        backgroundColor: '#2E236C',
+        borderRadius: 18,
+        padding: 18,
+        borderWidth: 1,
+        borderColor: '#433D8B',
+    },
+    progressItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    progressItemLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    progressItemLabel: {
+        fontSize: 15,
+        color: '#FFFFFF',
+        fontWeight: '500',
+    },
+    progressItemValue: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#C8ACD6',
+    },
+    progressDivider: {
+        height: 1,
+        backgroundColor: '#433D8B',
+        marginVertical: 14,
+    },
+    // Achievements
+    achievementProgressCard: {
+        backgroundColor: '#2E236C',
+        borderRadius: 18,
+        padding: 18,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#433D8B',
+    },
+    achievementProgressBar: {
+        height: 8,
+        backgroundColor: '#433D8B',
+        borderRadius: 4,
+        marginBottom: 10,
+        overflow: 'hidden',
+    },
+    achievementProgressFill: {
+        height: '100%',
+        backgroundColor: '#C8ACD6',
+        borderRadius: 4,
+    },
+    achievementProgressText: {
+        fontSize: 13,
+        color: '#FFFFFF',
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    achievementsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 12,
     },
     achievementCard: {
-        flexDirection: 'row',
+        width: '48%',
+        backgroundColor: '#2E236C',
+        borderRadius: 18,
+        padding: 18,
         alignItems: 'center',
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
+        borderWidth: 1,
+        borderColor: '#433D8B',
+        position: 'relative',
     },
-    achievementCardLocked: {
-        opacity: 0.6,
+    achievementCardEarned: {
+        borderColor: '#C8ACD6',
+        borderWidth: 2,
     },
-    achievementIcon: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: '#FFF9E6',
+    achievementIconContainer: {
+        width: 64,
+        height: 64,
+        borderRadius: 18,
+        backgroundColor: '#433D8B',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 16,
-    },
-    achievementIconLocked: {
-        backgroundColor: '#F5F5F5',
-    },
-    achievementContent: {
-        flex: 1,
+        marginBottom: 12,
     },
     achievementTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-        marginBottom: 4,
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#FFFFFF',
+        marginBottom: 6,
+        textAlign: 'center',
     },
     achievementTitleLocked: {
-        color: '#999',
+        opacity: 0.5,
     },
     achievementDescription: {
-        fontSize: 14,
-        color: '#999',
+        fontSize: 11,
+        color: '#FFFFFF',
+        opacity: 0.7,
+        textAlign: 'center',
+        lineHeight: 14,
     },
-    settingsButton: {
+    achievementBadge: {
+        position: 'absolute',
+        top: 12,
+        right: 12,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: '#C8ACD6',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    // Settings
+    settingsCard: {
+        backgroundColor: '#2E236C',
+        borderRadius: 18,
+        padding: 8,
+        borderWidth: 1,
+        borderColor: '#433D8B',
+    },
+    settingsItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
-        borderRadius: 12,
+        justifyContent: 'space-between',
         padding: 16,
-        marginBottom: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
     },
-    settingsText: {
+    settingsItemLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
         flex: 1,
-        fontSize: 16,
-        color: '#333',
-        marginLeft: 16,
     },
-    logoutButton: {
-        borderTopWidth: 1,
-        borderTopColor: '#E5E5E5',
-        marginTop: 12,
-        paddingTop: 16,
+    settingsIconContainer: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    settingsItemText: {
+        fontSize: 16,
+        color: '#FFFFFF',
+        fontWeight: '500',
     },
     logoutText: {
-        color: '#FF3B30',
+        color: '#FF6B9D',
         fontWeight: '600',
+    },
+    settingsDivider: {
+        height: 1,
+        backgroundColor: '#433D8B',
+        marginHorizontal: 16,
     },
 });
 

@@ -18,14 +18,14 @@ export default function AppHeader() {
             <View style={styles.statsContainer}>
                 {/* Streak display */}
                 <View style={styles.statItem}>
-                    <Ionicons name="flame" size={22} color="#fff" />
+                    <Ionicons name="flame" size={18} color="#C8ACD6" />
                     <Text style={styles.statValue}>{userProgress.streak}</Text>
                     <Text style={styles.statLabel}>Streak</Text>
                 </View>
 
                 {/* Memorized words display */}
                 <View style={styles.statItem}>
-                    <Ionicons name="book" size={22} color="#fff" />
+                    <Ionicons name="book" size={18} color="#C8ACD6" />
                     <Text style={styles.statValue}>{memorizedWordsCount}</Text>
                     <Text style={styles.statLabel}>Words</Text>
                 </View>
@@ -41,17 +41,13 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         zIndex: 1000,
-        backgroundColor: '#58CC02', // Theme color
+        backgroundColor: '#2E236C',
         paddingTop: 60,
-        paddingBottom: 16,
-        paddingHorizontal: 20,
-        borderBottomWidth: 0, // Remove border since we're using theme color
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-        minHeight: 110, // Total header height for padding calculations
+        paddingBottom: 12,
+        paddingHorizontal: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#433D8B',
+        minHeight: 110,
     },
     statsContainer: {
         flexDirection: 'row',
@@ -61,18 +57,18 @@ const styles = StyleSheet.create({
     statItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        gap: 6,
     },
     statValue: {
-        fontSize: 24,
+        fontSize: 18,
         fontWeight: '700',
-        color: '#fff',
-        marginRight: 4,
+        color: '#C8ACD6',
+        marginRight: 2,
     },
     statLabel: {
-        fontSize: 14,
-        color: '#fff',
+        fontSize: 12,
+        color: '#C8ACD6',
         fontWeight: '500',
-        opacity: 0.9,
+        opacity: 0.7,
     },
 });

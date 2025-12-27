@@ -19,31 +19,31 @@ const learnedWords = [
 const games = [
     {
         id: 1,
-        title: 'Word Match',
-        iconName: 'swap-horizontal',
-        description: 'Match English words with their Mongolian translations',
-        color: '#58CC02',
+        title: 'Mogoi',
+        iconName: 'game-controller',
+        description: 'By Hatna',
+        color: '#6B5FBB',
     },
     {
         id: 2,
         title: 'Flashcards',
         iconName: 'albums',
-        description: 'Test your memory with flashcard quizzes',
-        color: '#1CB0F6',
+        description: 'Memory test',
+        color: '#4A7FA3',
     },
     {
         id: 3,
-        title: 'Word Scramble',
-        iconName: 'text',
-        description: 'Unscramble letters to form English words',
-        color: '#FF9600',
+        title: 'Glass Bridge',
+        iconName: 'walk',
+        description: 'Choose wisely',
+        color: '#7C6FD3',
     },
     {
         id: 4,
-        title: 'Speed Challenge',
-        iconName: 'flash',
-        description: 'Race against time to translate words',
-        color: '#E63946',
+        title: 'Word Scramble',
+        iconName: 'shuffle',
+        description: 'Unscramble words',
+        color: '#5A8F7B',
     },
 ];
 
@@ -63,62 +63,71 @@ export default function GamesScreen() {
     return (
         <ScrollView
             style={styles.container}
-            contentContainerStyle={{ paddingTop: 110, paddingBottom: 20 }}
-            bounces={false}
+            contentContainerStyle={{ paddingTop: 110, paddingBottom: 30 }}
             showsVerticalScrollIndicator={false}
-            decelerationRate="normal"
-            scrollEventThrottle={16}
         >
+            {/* Header Section */}
             <View style={styles.header}>
                 <Text style={styles.title}>Games</Text>
                 <Text style={styles.subtitle}>Practice with words you've learned</Text>
                 <View style={styles.wordsCount}>
-                    <Ionicons name="book" size={20} color="#58CC02" />
+                    <Ionicons name="book" size={18} color="#C8ACD6" />
                     <Text style={styles.wordsCountText}>
                         {availableWords.length} words available
                     </Text>
                 </View>
             </View>
 
+            {/* Games Grid Section */}
             <View style={styles.gamesSection}>
-                <Text style={styles.sectionTitle}>Choose a Game</Text>
-                {games.map((game) => (
-                    <TouchableOpacity
-                        key={game.id}
-                        style={[styles.gameCard, { borderLeftColor: game.color }]}
-                        onPress={() => handleGamePress(game.id)}
-                        activeOpacity={0.8}
-                    >
-                        <View style={[styles.gameIconContainer, { backgroundColor: `${game.color}20` }]}>
-                            <Ionicons name={game.iconName as any} size={32} color={game.color} />
-                        </View>
-                        <View style={styles.gameInfo}>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Choose a Game</Text>
+                </View>
+                <View style={styles.gamesGrid}>
+                    {games.map((game) => (
+                        <TouchableOpacity
+                            key={game.id}
+                            style={[styles.gameCard, { backgroundColor: game.color }]}
+                            onPress={() => handleGamePress(game.id)}
+                            activeOpacity={0.8}
+                        >
+                            <View style={styles.gameIconContainer}>
+                                <Ionicons name={game.iconName as any} size={32} color="#FFFFFF" />
+                            </View>
                             <Text style={styles.gameTitle}>{game.title}</Text>
                             <Text style={styles.gameDescription}>{game.description}</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={24} color={game.color} />
-                    </TouchableOpacity>
-                ))}
-            </View>
-
-            <View style={styles.wordsSection}>
-                <Text style={styles.sectionTitle}>Your Learned Words</Text>
-                <View style={styles.wordsGrid}>
-                    {availableWords.map((word, index) => (
-                        <View key={index} style={styles.wordCard}>
-                            <View style={styles.wordCardHeader}>
-                                <Text style={styles.wordEnglish}>{word.english}</Text>
-                                <View style={styles.wordCategory}>
-                                    <Text style={styles.wordCategoryText}>{word.category}</Text>
-                                </View>
+                            <View style={styles.playButton}>
+                                <Ionicons name="play" size={16} color={game.color} />
                             </View>
-                            <Text style={styles.wordMongolian}>{word.mongolian}</Text>
-                        </View>
+                        </TouchableOpacity>
                     ))}
                 </View>
-                {availableWords.length === 0 && (
+            </View>
+
+            {/* Learned Words Section */}
+            <View style={styles.wordsSection}>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Your Learned Words</Text>
+                </View>
+                {availableWords.length > 0 ? (
+                    <View style={styles.wordsGrid}>
+                        {availableWords.map((word, index) => (
+                            <View key={index} style={styles.wordCard}>
+                                <View style={styles.wordCardHeader}>
+                                    <Text style={styles.wordEnglish}>{word.english}</Text>
+                                    <View style={styles.wordCategory}>
+                                        <Text style={styles.wordCategoryText}>{word.category}</Text>
+                                    </View>
+                                </View>
+                                <Text style={styles.wordMongolian}>{word.mongolian}</Text>
+                            </View>
+                        ))}
+                    </View>
+                ) : (
                     <View style={styles.emptyState}>
-                        <Ionicons name="book-outline" size={64} color="#CCCCCC" />
+                        <View style={styles.emptyIconContainer}>
+                            <Ionicons name="book-outline" size={48} color="#433D8B" />
+                        </View>
                         <Text style={styles.emptyText}>Complete lessons to unlock words for games!</Text>
                     </View>
                 )}
@@ -130,92 +139,107 @@ export default function GamesScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8F9FA',
+        backgroundColor: '#17153B',
     },
+    // Header Section
     header: {
-        marginTop: 0,
-        paddingTop: 0, // Removed since we have fixed header above
-        paddingHorizontal: 20,
-        paddingBottom: 30,
-        backgroundColor: '#58CC02',
+        paddingTop: 20,
+        paddingHorizontal: 16,
+        paddingBottom: 24,
+        backgroundColor: '#2E236C',
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
     },
     title: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: '#fff',
+        fontSize: 28,
+        fontWeight: '700',
+        color: '#FFFFFF',
         marginBottom: 8,
     },
     subtitle: {
-        fontSize: 16,
-        color: '#fff',
-        opacity: 0.9,
+        fontSize: 14,
+        color: '#FFFFFF',
+        opacity: 0.8,
         marginBottom: 16,
     },
     wordsCount: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.25)',
-        paddingHorizontal: 16,
+        backgroundColor: '#433D8B',
+        paddingHorizontal: 14,
         paddingVertical: 10,
-        borderRadius: 20,
+        borderRadius: 14,
         alignSelf: 'flex-start',
         gap: 8,
     },
     wordsCountText: {
-        fontSize: 14,
-        color: '#fff',
+        fontSize: 13,
+        color: '#FFFFFF',
         fontWeight: '600',
     },
+    // Games Section
     gamesSection: {
-        padding: 20,
+        paddingHorizontal: 16,
+        marginTop: 24,
+    },
+    sectionHeader: {
+        marginBottom: 16,
     },
     sectionTitle: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 16,
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#FFFFFF',
+    },
+    gamesGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 12,
     },
     gameCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#fff',
+        width: '48%',
         borderRadius: 20,
         padding: 20,
-        marginBottom: 16,
-        borderLeftWidth: 6,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 4,
+        minHeight: 160,
+        justifyContent: 'space-between',
+        position: 'relative',
+        overflow: 'hidden',
     },
     gameIconContainer: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
+        width: 56,
+        height: 56,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255, 255, 255, 0.25)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 16,
-    },
-    gameIcon: {
-        fontSize: 32,
-    },
-    gameInfo: {
-        flex: 1,
+        marginBottom: 12,
     },
     gameTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#333',
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#FFFFFF',
         marginBottom: 6,
     },
     gameDescription: {
-        fontSize: 14,
-        color: '#999',
+        fontSize: 12,
+        color: '#FFFFFF',
+        opacity: 0.9,
+        fontWeight: '500',
     },
+    playButton: {
+        position: 'absolute',
+        bottom: 16,
+        right: 16,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#FFFFFF',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    // Words Section
     wordsSection: {
-        padding: 20,
-        paddingTop: 0,
+        paddingHorizontal: 16,
+        marginTop: 24,
     },
     wordsGrid: {
         flexDirection: 'row',
@@ -224,14 +248,11 @@ const styles = StyleSheet.create({
     },
     wordCard: {
         width: '48%',
-        backgroundColor: '#fff',
+        backgroundColor: '#2E236C',
         borderRadius: 16,
         padding: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 4,
-        elevation: 3,
+        borderWidth: 1,
+        borderColor: '#433D8B',
     },
     wordCardHeader: {
         flexDirection: 'row',
@@ -240,35 +261,52 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     wordEnglish: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#FFFFFF',
         flex: 1,
     },
     wordCategory: {
-        backgroundColor: '#E8F5E9',
+        backgroundColor: '#433D8B',
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 8,
     },
     wordCategoryText: {
         fontSize: 10,
-        color: '#58CC02',
+        color: '#FFFFFF',
         fontWeight: '600',
     },
     wordMongolian: {
-        fontSize: 16,
-        color: '#666',
+        fontSize: 14,
+        color: '#FFFFFF',
+        opacity: 0.8,
         fontStyle: 'italic',
     },
+    // Empty State
     emptyState: {
         alignItems: 'center',
-        paddingVertical: 60,
+        paddingVertical: 40,
+        backgroundColor: '#2E236C',
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: '#433D8B',
+    },
+    emptyIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 20,
+        backgroundColor: '#433D8B',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
     },
     emptyText: {
-        fontSize: 16,
-        color: '#999',
+        fontSize: 14,
+        color: '#FFFFFF',
+        opacity: 0.7,
         textAlign: 'center',
-        marginTop: 16,
+        paddingHorizontal: 20,
+        fontWeight: '500',
     },
 });

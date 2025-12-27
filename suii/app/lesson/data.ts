@@ -23,14 +23,71 @@ export interface LessonData {
     phrases: Phrase[];
 }
 
+// Helper types for easier lesson creation
+interface PhraseInput {
+    text: string;
+    translation: string;
+    breakdown: Array<{ word: string; meaning: string }>;
+    extraWords?: string[];
+    vocabPairs?: Array<{ english: string; mongolian: string }>;
+    multipleChoice?: Array<{
+        question: string;
+        options: string[];
+        correct: number;
+    }>;
+}
+
+interface LessonInput {
+    conversation: Array<{ speaker: 'A' | 'B'; text: string }>;
+    phrases: PhraseInput[];
+}
+
+/**
+ * Helper function to create a phrase with auto-generated fields
+ */
+function createPhrase(input: PhraseInput, id: number): Phrase {
+    // Auto-generate words from text (split by spaces and punctuation)
+    const words = input.text
+        .split(/\s+/)
+        .map(w => w.replace(/[.,!?;:]/g, ''))
+        .filter(w => w.length > 0);
+
+    return {
+        id,
+        text: input.text,
+        translation: input.translation,
+        breakdown: input.breakdown,
+        words,
+        extraWords: input.extraWords || [],
+        vocabPairs: input.vocabPairs || [],
+        multipleChoice: input.multipleChoice || [],
+    };
+}
+
+/**
+ * Helper function to create a lesson with auto-generated phrase IDs
+ */
+function createLesson(input: LessonInput): LessonData {
+    return {
+        conversation: input.conversation,
+        phrases: input.phrases.map((phrase, index) => createPhrase(phrase, index + 1)),
+    };
+}
+
 /**
  * Lesson data mapped by lesson ID (format: "sectionId-unitId")
  * Example: "1-1" = Section 1, Unit 1
  * Each unit is a single lesson - no separate lesson numbers
+ * 
+ * To add a new lesson:
+ * 1. Add a new entry with key "sectionId-unitId"
+ * 2. Use createLesson() helper with conversation and phrases
+ * 3. For each phrase, provide: text, translation, breakdown
+ * 4. Optional: extraWords, vocabPairs, multipleChoice
  */
 export const lessonsData: Record<string, LessonData> = {
     // Section 1: Greetings, Unit 1: Basic Greetings
-    '1-1': {
+    '1-1': createLesson({
         conversation: [
             { speaker: 'A', text: "Hey! Good morning. How are you?" },
             { speaker: 'B', text: "I'm good. I'm not busy today." },
@@ -40,7 +97,6 @@ export const lessonsData: Record<string, LessonData> = {
         ],
         phrases: [
             {
-                id: 1,
                 text: "Hey! Good morning. How are you?",
                 translation: "Сайн уу! Өглөөний мэнд. Та яаж байна?",
                 breakdown: [
@@ -48,7 +104,6 @@ export const lessonsData: Record<string, LessonData> = {
                     { word: "Good morning", meaning: "Өглөөний мэнд" },
                     { word: "How are you?", meaning: "Та яаж байна?" },
                 ],
-                words: ["Hey", "Good", "morning", "How", "are", "you"],
                 extraWords: ["Hello", "Hi"],
                 vocabPairs: [
                     { english: "Hey", mongolian: "Сайн уу" },
@@ -70,7 +125,6 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
             {
-                id: 2,
                 text: "I'm good. I'm not busy today.",
                 translation: "Би сайн байна. Өнөөдөр би завгүй биш.",
                 breakdown: [
@@ -79,7 +133,6 @@ export const lessonsData: Record<string, LessonData> = {
                     { word: "not busy", meaning: "завгүй биш" },
                     { word: "today", meaning: "өнөөдөр" },
                 ],
-                words: ["I'm", "good", "I'm", "not", "busy", "today"],
                 extraWords: ["I", "am"],
                 vocabPairs: [
                     { english: "I'm", mongolian: "Би" },
@@ -101,7 +154,6 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
             {
-                id: 3,
                 text: "Nice! but I'm a little tired.",
                 translation: "Сайн байна! Гэхдээ би бага зэрэг ядарсан байна.",
                 breakdown: [
@@ -111,7 +163,6 @@ export const lessonsData: Record<string, LessonData> = {
                     { word: "a little", meaning: "бага зэрэг" },
                     { word: "tired", meaning: "ядарсан" },
                 ],
-                words: ["Nice", "but", "I'm", "a", "little", "tired"],
                 extraWords: ["I", "am"],
                 vocabPairs: [
                     { english: "Nice", mongolian: "Сайн байна" },
@@ -133,7 +184,6 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
             {
-                id: 4,
                 text: "I'm not tired. I feel energetic.",
                 translation: "Би ядарсангүй. Би эрч хүчтэй мэдэрч байна.",
                 breakdown: [
@@ -142,7 +192,6 @@ export const lessonsData: Record<string, LessonData> = {
                     { word: "I feel", meaning: "Би мэдэрч байна" },
                     { word: "energetic", meaning: "эрч хүчтэй" },
                 ],
-                words: ["I'm", "not", "tired", "I", "feel", "energetic"],
                 extraWords: ["am", "I"],
                 vocabPairs: [
                     { english: "tired", mongolian: "ядарсан" },
@@ -164,7 +213,6 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
             {
-                id: 5,
                 text: "Good for you",
                 translation: "Таны хувьд сайн байна",
                 breakdown: [
@@ -172,7 +220,6 @@ export const lessonsData: Record<string, LessonData> = {
                     { word: "for", meaning: "хувьд" },
                     { word: "you", meaning: "та" },
                 ],
-                words: ["Good", "for", "you"],
                 extraWords: ["I", "am"],
                 vocabPairs: [
                     { english: "Good", mongolian: "Сайн" },
@@ -194,9 +241,9 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
         ],
-    },
+    }),
     // Section 1: Greetings, Unit 2: Formal Greetings
-    '1-2': {
+    '1-2': createLesson({
         conversation: [
             { speaker: 'A', text: "Hello! How's it going?" },
             { speaker: 'B', text: "Pretty good, thanks! How about you?" },
@@ -205,14 +252,12 @@ export const lessonsData: Record<string, LessonData> = {
         ],
         phrases: [
             {
-                id: 1,
                 text: "Hello! How's it going?",
                 translation: "Сайн уу! Яаж байна?",
                 breakdown: [
                     { word: "Hello", meaning: "Сайн уу" },
                     { word: "How's it going", meaning: "Яаж байна" },
                 ],
-                words: ["Hello", "How's", "it", "going"],
                 extraWords: ["Hey", "Hi"],
                 vocabPairs: [
                     { english: "Hello", mongolian: "Сайн уу" },
@@ -232,7 +277,6 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
             {
-                id: 2,
                 text: "Pretty good, thanks! How about you?",
                 translation: "Маш сайн, баярлалаа! Чи яаж байна?",
                 breakdown: [
@@ -240,7 +284,6 @@ export const lessonsData: Record<string, LessonData> = {
                     { word: "thanks", meaning: "баярлалаа" },
                     { word: "How about you", meaning: "Чи яаж байна" },
                 ],
-                words: ["Pretty", "good", "thanks", "How", "about", "you"],
                 extraWords: ["I", "am"],
                 vocabPairs: [
                     { english: "Pretty good", mongolian: "Маш сайн" },
@@ -261,9 +304,9 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
         ],
-    },
+    }),
     // Section 2: At the Airport, Unit 1: Check-in
-    '2-1': {
+    '2-1': createLesson({
         conversation: [
             { speaker: 'A', text: "Good morning. I'd like to check in." },
             { speaker: 'B', text: "Of course. May I see your passport?" },
@@ -273,7 +316,6 @@ export const lessonsData: Record<string, LessonData> = {
         ],
         phrases: [
             {
-                id: 1,
                 text: "Good morning. I'd like to check in.",
                 translation: "Өглөөний мэнд. Би бүртгүүлэх хүсэж байна.",
                 breakdown: [
@@ -281,7 +323,6 @@ export const lessonsData: Record<string, LessonData> = {
                     { word: "I'd like to", meaning: "Би хүсэж байна" },
                     { word: "check in", meaning: "бүртгүүлэх" },
                 ],
-                words: ["Good", "morning", "I'd", "like", "to", "check", "in"],
                 extraWords: ["Hello", "Hi"],
                 vocabPairs: [
                     { english: "check in", mongolian: "бүртгүүлэх" },
@@ -302,7 +343,6 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
             {
-                id: 2,
                 text: "Of course. May I see your passport?",
                 translation: "Мэдээж. Би таны паспортыг харж болох уу?",
                 breakdown: [
@@ -310,7 +350,6 @@ export const lessonsData: Record<string, LessonData> = {
                     { word: "May I see", meaning: "Би харж болох уу" },
                     { word: "your passport", meaning: "таны паспорт" },
                 ],
-                words: ["Of", "course", "May", "I", "see", "your", "passport"],
                 extraWords: ["the", "a"],
                 vocabPairs: [
                     { english: "Of course", mongolian: "Мэдээж" },
@@ -331,9 +370,9 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
         ],
-    },
+    }),
     // Section 3: Restaurant, Unit 1: Ordering Food
-    '3-1': {
+    '3-1': createLesson({
         conversation: [
             { speaker: 'A', text: "Good evening. Table for two, please." },
             { speaker: 'B', text: "Of course. This way, please." },
@@ -343,7 +382,6 @@ export const lessonsData: Record<string, LessonData> = {
         ],
         phrases: [
             {
-                id: 1,
                 text: "Good evening. Table for two, please.",
                 translation: "Оройн мэнд. Хоёр хүний ширээ, гуйя.",
                 breakdown: [
@@ -351,7 +389,6 @@ export const lessonsData: Record<string, LessonData> = {
                     { word: "Table for two", meaning: "Хоёр хүний ширээ" },
                     { word: "please", meaning: "гуйя" },
                 ],
-                words: ["Good", "evening", "Table", "for", "two", "please"],
                 extraWords: ["Hello", "Hi"],
                 vocabPairs: [
                     { english: "Good evening", mongolian: "Оройн мэнд" },
@@ -372,14 +409,12 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
             {
-                id: 2,
                 text: "Can I see the menu?",
                 translation: "Би цэс харж болох уу?",
                 breakdown: [
                     { word: "Can I see", meaning: "Би харж болох уу" },
                     { word: "the menu", meaning: "цэс" },
                 ],
-                words: ["Can", "I", "see", "the", "menu"],
                 extraWords: ["a", "an"],
                 vocabPairs: [
                     { english: "menu", mongolian: "цэс" },
@@ -399,9 +434,9 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
         ],
-    },
+    }),
     // Section 1: Greetings, Unit 3: Time-based Greetings
-    '1-3': {
+    '1-3': createLesson({
         conversation: [
             { speaker: 'A', text: "Hi there! Nice to meet you." },
             { speaker: 'B', text: "Nice to meet you too! What's your name?" },
@@ -410,14 +445,12 @@ export const lessonsData: Record<string, LessonData> = {
         ],
         phrases: [
             {
-                id: 1,
                 text: "Hi there! Nice to meet you.",
                 translation: "Сайн уу! Тантай уулзахад таатай байна.",
                 breakdown: [
                     { word: "Hi there", meaning: "Сайн уу" },
                     { word: "Nice to meet you", meaning: "Тантай уулзахад таатай" },
                 ],
-                words: ["Hi", "there", "Nice", "to", "meet", "you"],
                 extraWords: ["Hello", "Hey"],
                 vocabPairs: [
                     { english: "Hi there", mongolian: "Сайн уу" },
@@ -438,14 +471,12 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
             {
-                id: 2,
                 text: "What's your name?",
                 translation: "Таны нэр юу вэ?",
                 breakdown: [
                     { word: "What's", meaning: "юу вэ" },
                     { word: "your name", meaning: "таны нэр" },
                 ],
-                words: ["What's", "your", "name"],
                 extraWords: ["the", "a"],
                 vocabPairs: [
                     { english: "What's your name", mongolian: "Таны нэр юу вэ" },
@@ -465,9 +496,9 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
         ],
-    },
+    }),
     // Section 1: Greetings, Unit 4: Introductions
-    '1-4': {
+    '1-4': createLesson({
         conversation: [
             { speaker: 'A', text: "Good morning, sir. How may I help you?" },
             { speaker: 'B', text: "Good morning. I have an appointment." },
@@ -476,7 +507,6 @@ export const lessonsData: Record<string, LessonData> = {
         ],
         phrases: [
             {
-                id: 1,
                 text: "Good morning, sir. How may I help you?",
                 translation: "Өглөөний мэнд, эрхэм. Би танд яаж туслах вэ?",
                 breakdown: [
@@ -484,7 +514,6 @@ export const lessonsData: Record<string, LessonData> = {
                     { word: "sir", meaning: "эрхэм" },
                     { word: "How may I help you", meaning: "Би танд яаж туслах вэ" },
                 ],
-                words: ["Good", "morning", "sir", "How", "may", "I", "help", "you"],
                 extraWords: ["Hello", "Hi"],
                 vocabPairs: [
                     { english: "sir", mongolian: "эрхэм" },
@@ -505,14 +534,12 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
             {
-                id: 2,
                 text: "I have an appointment.",
                 translation: "Би уулзалттай байна.",
                 breakdown: [
                     { word: "I have", meaning: "Би байна" },
                     { word: "an appointment", meaning: "уулзалт" },
                 ],
-                words: ["I", "have", "an", "appointment"],
                 extraWords: ["the", "a"],
                 vocabPairs: [
                     { english: "appointment", mongolian: "уулзалт" },
@@ -532,9 +559,9 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
         ],
-    },
+    }),
     // Section 2: At the Airport, Unit 2: Security
-    '2-2': {
+    '2-2': createLesson({
         conversation: [
             { speaker: 'A', text: "I have a reservation for two." },
             { speaker: 'B', text: "Under what name?" },
@@ -543,7 +570,6 @@ export const lessonsData: Record<string, LessonData> = {
         ],
         phrases: [
             {
-                id: 1,
                 text: "I have a reservation for two.",
                 translation: "Би хоёр хүний захиалгатай байна.",
                 breakdown: [
@@ -551,7 +577,6 @@ export const lessonsData: Record<string, LessonData> = {
                     { word: "a reservation", meaning: "захиалга" },
                     { word: "for two", meaning: "хоёр хүний" },
                 ],
-                words: ["I", "have", "a", "reservation", "for", "two"],
                 extraWords: ["the", "an"],
                 vocabPairs: [
                     { english: "reservation", mongolian: "захиалга" },
@@ -571,14 +596,12 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
             {
-                id: 2,
                 text: "Under what name?",
                 translation: "Ямар нэрээр?",
                 breakdown: [
                     { word: "Under", meaning: "дор" },
                     { word: "what name", meaning: "ямар нэр" },
                 ],
-                words: ["Under", "what", "name"],
                 extraWords: ["the", "a"],
                 vocabPairs: [
                     { english: "Under what name", mongolian: "Ямар нэрээр" },
@@ -592,9 +615,9 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
         ],
-    },
+    }),
     // Section 3: Restaurant, Unit 2: Menu Items
-    '3-2': {
+    '3-2': createLesson({
         conversation: [
             { speaker: 'A', text: "Are you ready to order?" },
             { speaker: 'B', text: "Yes, I'll have the steak, please." },
@@ -603,14 +626,12 @@ export const lessonsData: Record<string, LessonData> = {
         ],
         phrases: [
             {
-                id: 1,
                 text: "Are you ready to order?",
                 translation: "Та захиалахад бэлэн үү?",
                 breakdown: [
                     { word: "Are you ready", meaning: "Та бэлэн үү" },
                     { word: "to order", meaning: "захиалах" },
                 ],
-                words: ["Are", "you", "ready", "to", "order"],
                 extraWords: ["Hello", "Hi"],
                 vocabPairs: [
                     { english: "ready to order", mongolian: "захиалахад бэлэн" },
@@ -630,7 +651,6 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
             {
-                id: 2,
                 text: "I'll have the steak, please.",
                 translation: "Би стейк захиална, гуйя.",
                 breakdown: [
@@ -638,7 +658,6 @@ export const lessonsData: Record<string, LessonData> = {
                     { word: "the steak", meaning: "стейк" },
                     { word: "please", meaning: "гуйя" },
                 ],
-                words: ["I'll", "have", "the", "steak", "please"],
                 extraWords: ["a", "an"],
                 vocabPairs: [
                     { english: "steak", mongolian: "стейк" },
@@ -658,9 +677,9 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
         ],
-    },
+    }),
     // Section 1: Greetings, Unit 5: Farewells
-    '1-5': {
+    '1-5': createLesson({
         conversation: [
             { speaker: 'A', text: "I have to go now. See you later!" },
             { speaker: 'B', text: "Okay, take care! Goodbye!" },
@@ -668,14 +687,12 @@ export const lessonsData: Record<string, LessonData> = {
         ],
         phrases: [
             {
-                id: 1,
                 text: "I have to go now. See you later!",
                 translation: "Би одоо явах ёстой. Дараа уулзая!",
                 breakdown: [
                     { word: "I have to go", meaning: "Би явах ёстой" },
                     { word: "See you later", meaning: "Дараа уулзая" },
                 ],
-                words: ["I", "have", "to", "go", "now", "See", "you", "later"],
                 extraWords: ["Hello", "Hi"],
                 vocabPairs: [
                     { english: "See you later", mongolian: "Дараа уулзая" },
@@ -696,9 +713,9 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
         ],
-    },
+    }),
     // Section 1: Greetings, Unit 6: Polite Expressions
-    '1-6': {
+    '1-6': createLesson({
         conversation: [
             { speaker: 'A', text: "Thank you so much for your help!" },
             { speaker: 'B', text: "You're welcome! It was my pleasure." },
@@ -706,7 +723,6 @@ export const lessonsData: Record<string, LessonData> = {
         ],
         phrases: [
             {
-                id: 1,
                 text: "Thank you so much for your help!",
                 translation: "Тусласанд маш их баярлалаа!",
                 breakdown: [
@@ -714,7 +730,6 @@ export const lessonsData: Record<string, LessonData> = {
                     { word: "so much", meaning: "маш их" },
                     { word: "for your help", meaning: "тусласанд" },
                 ],
-                words: ["Thank", "you", "so", "much", "for", "your", "help"],
                 extraWords: ["Hello", "Hi"],
                 vocabPairs: [
                     { english: "Thank you", mongolian: "Баярлалаа" },
@@ -735,9 +750,9 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
         ],
-    },
+    }),
     // Section 2: At the Airport, Unit 3: Boarding
-    '2-3': {
+    '2-3': createLesson({
         conversation: [
             { speaker: 'A', text: "Boarding will begin in 30 minutes." },
             { speaker: 'B', text: "Which gate is it?" },
@@ -745,7 +760,6 @@ export const lessonsData: Record<string, LessonData> = {
         ],
         phrases: [
             {
-                id: 1,
                 text: "Boarding will begin in 30 minutes.",
                 translation: "Суух ажиллагаа 30 минутын дараа эхлэх болно.",
                 breakdown: [
@@ -753,7 +767,6 @@ export const lessonsData: Record<string, LessonData> = {
                     { word: "will begin", meaning: "эхлэх болно" },
                     { word: "in 30 minutes", meaning: "30 минутын дараа" },
                 ],
-                words: ["Boarding", "will", "begin", "in", "30", "minutes"],
                 extraWords: ["the", "a"],
                 vocabPairs: [
                     { english: "Boarding", mongolian: "Суух ажиллагаа" },
@@ -774,9 +787,9 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
         ],
-    },
+    }),
     // Section 3: Restaurant, Unit 3: Special Requests
-    '3-3': {
+    '3-3': createLesson({
         conversation: [
             { speaker: 'A', text: "Can I have this without onions?" },
             { speaker: 'B', text: "Of course. Anything else?" },
@@ -784,7 +797,6 @@ export const lessonsData: Record<string, LessonData> = {
         ],
         phrases: [
             {
-                id: 1,
                 text: "Can I have this without onions?",
                 translation: "Би үүнийг сонгино байхгүйгээр авч болох уу?",
                 breakdown: [
@@ -792,7 +804,6 @@ export const lessonsData: Record<string, LessonData> = {
                     { word: "without", meaning: "байхгүйгээр" },
                     { word: "onions", meaning: "сонгино" },
                 ],
-                words: ["Can", "I", "have", "this", "without", "onions"],
                 extraWords: ["the", "a"],
                 vocabPairs: [
                     { english: "without", mongolian: "байхгүйгээр" },
@@ -812,7 +823,7 @@ export const lessonsData: Record<string, LessonData> = {
                 ],
             },
         ],
-    },
+    }),
 };
 
 /**

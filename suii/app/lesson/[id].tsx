@@ -42,11 +42,15 @@ const EncouragementMessage = ({
 export default function LessonDetailScreen() {
     const router = useRouter();
     const { id } = useLocalSearchParams<{ id: string }>();
-    const { completeLesson, userProgress } = useApp();
+    const { completeLesson, userProgress, loseHeart, updateProgress } = useApp();
 
     // Load lesson data based on ID
     const lessonData = id ? getLessonData(id) : null;
     const [lessonNotFound, setLessonNotFound] = useState(!lessonData);
+
+    // Track the current lesson ID to detect when user enters a new lesson
+    // Initialize as null so first mount triggers reset
+    const [currentLessonId, setCurrentLessonId] = useState<string | null>(null);
 
     const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
     const [currentStep, setCurrentStep] = useState<LessonStep>('conversation');
@@ -73,13 +77,13 @@ export default function LessonDetailScreen() {
     // Encouraging messages to show when user gets questions right
     const encouragementMessages = [
         "Ga! ",
-        "Ymr aimar chachva",
-        "Amazing aimr  ",
-        "Aimar lalar ve ",
-        "puuuza",
-        "goy naasnaa ",
-        "naashin mundaginn",
-        "Deer chin sheene shuu "
+        "You are cooked",
+        "Han erdene is short",
+        "Good luck",
+        "Excellent",
+        "WooW",
+        "Good Good Good",
+        "Yeah yeah yeah"
     ];
 
     // Get conversation and phrases from lesson data
@@ -212,6 +216,35 @@ export default function LessonDetailScreen() {
     }, [currentStep]);
 
     /**
+     * Reset hearts to 5 when entering a new lesson/unit
+     * Detects when the lesson ID changes and resets hearts
+     * Also resets on initial mount when entering any lesson
+     */
+    useEffect(() => {
+        if (id) {
+            // Reset hearts when entering a new lesson (different ID) or on initial mount
+            if (id !== currentLessonId) {
+                updateProgress({ hearts: 5 });
+                setCurrentLessonId(id);
+            }
+        }
+    }, [id, currentLessonId, updateProgress]);
+
+    /**
+     * Exit lesson when hearts reach 0
+     * Navigate back to lessons screen when user runs out of hearts
+     */
+    useEffect(() => {
+        if (userProgress.hearts <= 0) {
+            // Small delay to show the heart loss animation
+            const timeout = setTimeout(() => {
+                router.back();
+            }, 1000);
+            return () => clearTimeout(timeout);
+        }
+    }, [userProgress.hearts, router]);
+
+    /**
      * Handle navigation to next step in the lesson flow
      * Manages state transitions between different lesson steps
      */
@@ -274,6 +307,10 @@ export default function LessonDetailScreen() {
      * Handle multiple choice answer selection
      * @param index - The index of the selected answer option
      */
+    /**
+     * Handle multiple choice answer selection
+     * Decrements hearts if answer is incorrect
+     */
     const handleMultipleChoice = (index: number) => {
         setSelectedAnswer(index);
         // Determine which question we're on (first or second multiple choice)
@@ -314,6 +351,8 @@ export default function LessonDetailScreen() {
             setEncouragementMessage(''); // Clear message on incorrect answer
             encouragementTranslateY.value = withTiming(-100, { duration: 200 });
             encouragementOpacity.value = withTiming(0, { duration: 200 });
+            // Lose a heart for incorrect answer
+            loseHeart();
         }
     };
 
@@ -411,6 +450,8 @@ export default function LessonDetailScreen() {
             setEncouragementMessage(''); // Clear message on incorrect answer
             encouragementTranslateY.value = withTiming(-100, { duration: 200 });
             encouragementOpacity.value = withTiming(0, { duration: 200 });
+            // Lose a heart for incorrect answer
+            loseHeart();
         }
     };
 
@@ -485,7 +526,8 @@ export default function LessonDetailScreen() {
                 }, 1000);
             }
         } else {
-            // Invalid match - clear selection after short delay
+            // Wrong match - reset selection and lose a heart
+            loseHeart();
             setTimeout(() => {
                 setSelectedEnglish(null);
                 setSelectedMongolian(null);
@@ -557,7 +599,7 @@ export default function LessonDetailScreen() {
                                     <Ionicons
                                         name={msg.speaker === 'A' ? 'person' : 'person-outline'}
                                         size={24}
-                                        color={msg.speaker === 'A' ? '#58CC02' : '#fff'}
+                                        color="#FFFFFF"
                                     />
                                 </View>
                             </View>
@@ -743,7 +785,7 @@ export default function LessonDetailScreen() {
                 {isCorrect === false && (
                     <Animated.View entering={FadeIn.duration(300)} style={styles.errorFeedbackContainer}>
                         <View style={styles.errorIconContainer}>
-                            <Ionicons name="close-circle" size={32} color="#FF3B30" />
+                            <Ionicons name="close-circle" size={32} color="#FFB6B6" />
                         </View>
                         <Text style={styles.incorrectText}>Not quite right</Text>
                         <Text style={styles.correctSentenceLabel}>The correct sentence is:</Text>
@@ -804,7 +846,7 @@ export default function LessonDetailScreen() {
                             >
                                 <Text style={styles.matchText}>{word}</Text>
                                 {matchedEnglish.includes(word) && (
-                                    <Ionicons name="checkmark-circle" size={20} color="#58CC02" />
+                                    <Ionicons name="checkmark-circle" size={20} color="#C8ACD6" />
                                 )}
                                 {selectedEnglish === word && !matchedEnglish.includes(word) && (
                                     <Ionicons name="radio-button-on" size={20} color="#1CB0F6" />
@@ -827,7 +869,7 @@ export default function LessonDetailScreen() {
                             >
                                 <Text style={styles.matchText}>{word}</Text>
                                 {matchedMongolian.includes(word) && (
-                                    <Ionicons name="checkmark-circle" size={20} color="#58CC02" />
+                                    <Ionicons name="checkmark-circle" size={20} color="#C8ACD6" />
                                 )}
                                 {selectedMongolian === word && !matchedMongolian.includes(word) && (
                                     <Ionicons name="radio-button-on" size={20} color="#1CB0F6" />
@@ -847,7 +889,7 @@ export default function LessonDetailScreen() {
                 exiting={FadeOut.duration(200)}
                 style={styles.completionContainer}
             >
-                <Ionicons name="checkmark-circle" size={100} color="#58CC02" />
+                <Ionicons name="checkmark-circle" size={100} color="#C8ACD6" />
                 <Text style={styles.completionTitle}>Lesson Complete!</Text>
                 <Text style={styles.completionSubtitle}>Great job! You've mastered this conversation.</Text>
                 <TouchableOpacity style={styles.completeButton} onPress={handleComplete}>
@@ -888,7 +930,7 @@ export default function LessonDetailScreen() {
             {/* Fixed position header with streak display */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#333" />
+                    <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
                 </TouchableOpacity>
                 <View style={styles.headerContent}>
                     <Text style={styles.headerTitle}>Lesson {id}</Text>
@@ -896,10 +938,25 @@ export default function LessonDetailScreen() {
                         Phrase {currentPhraseIndex + 1} of {phrases.length}
                     </Text>
                 </View>
-                {/* Streak display */}
-                <View style={styles.streakContainer}>
-                    <Ionicons name="flame" size={20} color="#FF6B35" />
-                    <Text style={styles.streakText}>{userProgress.streak}</Text>
+                {/* Hearts and Streak display */}
+                <View style={styles.headerRight}>
+                    {/* Hearts display */}
+                    <View style={styles.heartsContainer}>
+                        {[...Array(5)].map((_, index) => (
+                            <Ionicons
+                                key={index}
+                                name={index < userProgress.hearts ? "heart" : "heart-outline"}
+                                size={18}
+                                color={index < userProgress.hearts ? "#C8ACD6" : "#433D8B"}
+                                style={styles.heartIcon}
+                            />
+                        ))}
+                    </View>
+                    {/* Streak display */}
+                    <View style={styles.streakContainer}>
+                        <Ionicons name="flame" size={20} color="#C8ACD6" />
+                        <Text style={styles.streakText}>{userProgress.streak}</Text>
+                    </View>
                 </View>
             </View>
 
@@ -934,7 +991,7 @@ export default function LessonDetailScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8F9FA',
+        backgroundColor: '#17153B',
     },
     header: {
         position: 'absolute',
@@ -947,29 +1004,42 @@ const styles = StyleSheet.create({
         paddingTop: 60,
         paddingHorizontal: 20,
         paddingBottom: 16,
-        backgroundColor: '#fff',
+        backgroundColor: '#2E236C',
         borderBottomWidth: 1,
-        borderBottomColor: '#E5E5E5',
+        borderBottomColor: '#433D8B',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
+        shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
+    },
+    headerRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+    },
+    heartsContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    heartIcon: {
+        marginHorizontal: 1,
     },
     streakContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFF5E6',
+        backgroundColor: '#433D8B',
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 20,
         borderWidth: 1,
-        borderColor: '#FFE0B2',
+        borderColor: '#5A4FA3',
     },
     streakText: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#FF6B35',
+        color: '#FFFFFF',
         marginLeft: 4,
     },
     backButton: {
@@ -981,11 +1051,12 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#333',
+        color: '#FFFFFF',
     },
     headerSubtitle: {
         fontSize: 14,
-        color: '#999',
+        color: '#FFFFFF',
+        opacity: 0.8,
         marginTop: 4,
     },
     progressBarContainer: {
@@ -995,12 +1066,12 @@ const styles = StyleSheet.create({
         right: 0,
         zIndex: 99,
         height: 4,
-        backgroundColor: '#E5E5E5',
+        backgroundColor: '#433D8B',
         width: '100%',
     },
     progressBar: {
         height: '100%',
-        backgroundColor: '#58CC02',
+        backgroundColor: '#C8ACD6',
         borderRadius: 2,
     },
     content: {
@@ -1021,10 +1092,10 @@ const styles = StyleSheet.create({
         zIndex: 1000, // High z-index to float above everything
         paddingVertical: 16,
         paddingHorizontal: 24,
-        backgroundColor: '#E8F5E9',
+        backgroundColor: '#433D8B',
         borderRadius: 16,
         borderWidth: 2,
-        borderColor: '#58CC02',
+        borderColor: '#C8ACD6',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
@@ -1047,17 +1118,17 @@ const styles = StyleSheet.create({
     conversationTitle: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#333',
+        color: '#FFFFFF',
         flex: 1,
     },
     skipButton: {
-        backgroundColor: '#E5E5E5',
+        backgroundColor: '#433D8B',
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 20,
     },
     skipButtonText: {
-        color: '#666',
+        color: '#FFFFFF',
         fontSize: 14,
         fontWeight: '600',
     },
@@ -1092,10 +1163,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     avatarA: {
-        backgroundColor: '#E5E5E5',
+        backgroundColor: '#433D8B',
     },
     avatarB: {
-        backgroundColor: '#58CC02',
+        backgroundColor: '#C8ACD6',
     },
     message: {
         padding: 16,
@@ -1103,11 +1174,11 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     messageA: {
-        backgroundColor: '#E5E5E5',
+        backgroundColor: '#433D8B',
         borderTopLeftRadius: 4,
     },
     messageB: {
-        backgroundColor: '#58CC02',
+        backgroundColor: '#5A4FA3',
         borderTopRightRadius: 4,
     },
     messageText: {
@@ -1115,13 +1186,13 @@ const styles = StyleSheet.create({
         lineHeight: 22,
     },
     messageTextA: {
-        color: '#333',
+        color: '#FFFFFF',
     },
     messageTextB: {
-        color: '#fff',
+        color: '#FFFFFF',
     },
     startButton: {
-        backgroundColor: '#58CC02',
+        backgroundColor: '#C8ACD6',
         paddingVertical: 18,
         borderRadius: 25,
         alignItems: 'center',
@@ -1134,7 +1205,7 @@ const styles = StyleSheet.create({
         elevation: 6,
     },
     startButtonText: {
-        color: '#fff',
+        color: '#17153B',
         fontSize: 18,
         fontWeight: 'bold',
         marginRight: 8,
@@ -1147,48 +1218,42 @@ const styles = StyleSheet.create({
     breakdownTitle: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#333',
+        color: '#FFFFFF',
         marginBottom: 20,
     },
     phraseCard: {
-        backgroundColor: '#fff',
+        backgroundColor: '#2E236C',
         padding: 24,
         borderRadius: 16,
         marginBottom: 24,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 6,
+        borderWidth: 1,
+        borderColor: '#433D8B',
     },
     phraseText: {
         fontSize: 22,
         fontWeight: '600',
-        color: '#333',
+        color: '#FFFFFF',
         marginBottom: 12,
         lineHeight: 32,
     },
     translationText: {
         fontSize: 18,
-        color: '#666',
+        color: '#C8ACD6',
         fontStyle: 'italic',
         lineHeight: 26,
     },
     breakdownSection: {
-        backgroundColor: '#fff',
+        backgroundColor: '#2E236C',
         padding: 20,
         borderRadius: 16,
         marginBottom: 24,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 6,
+        borderWidth: 1,
+        borderColor: '#433D8B',
     },
     breakdownLabel: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#333',
+        color: '#FFFFFF',
         marginBottom: 16,
     },
     breakdownItem: {
@@ -1196,19 +1261,20 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingVertical: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#E5E5E5',
+        borderBottomColor: '#433D8B',
     },
     breakdownWord: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#58CC02',
+        color: '#C8ACD6',
     },
     breakdownMeaning: {
         fontSize: 16,
-        color: '#666',
+        color: '#FFFFFF',
+        opacity: 0.8,
     },
     nextButton: {
-        backgroundColor: '#58CC02',
+        backgroundColor: '#C8ACD6',
         paddingVertical: 18,
         borderRadius: 25,
         alignItems: 'center',
@@ -1221,13 +1287,13 @@ const styles = StyleSheet.create({
         elevation: 6,
     },
     nextButtonText: {
-        color: '#fff',
+        color: '#17153B',
         fontSize: 18,
         fontWeight: 'bold',
         marginRight: 8,
     },
     tryAgainButton: {
-        backgroundColor: '#ca1cf6ff',
+        backgroundColor: '#5A4FA3',
         paddingVertical: 18,
         borderRadius: 25,
         alignItems: 'center',
@@ -1241,7 +1307,7 @@ const styles = StyleSheet.create({
         elevation: 6,
     },
     tryAgainButtonText: {
-        color: '#fff',
+        color: '#FFFFFF',
         fontSize: 18,
         fontWeight: 'bold',
         marginRight: 8,
@@ -1253,13 +1319,14 @@ const styles = StyleSheet.create({
     },
     mcTitle: {
         fontSize: 16,
-        color: '#999',
+        color: '#C8ACD6',
+        opacity: 0.7,
         marginBottom: 8,
     },
     mcQuestion: {
         fontSize: 22,
         fontWeight: '600',
-        color: '#333',
+        color: '#FFFFFF',
         marginBottom: 24,
     },
     mcOptions: {
@@ -1267,35 +1334,30 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     mcOption: {
-        backgroundColor: '#fff',
+        backgroundColor: '#2E236C',
         padding: 20,
         borderRadius: 16,
         borderWidth: 2,
-        borderColor: '#E5E5E5',
+        borderColor: '#433D8B',
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
     },
     mcOptionSelected: {
-        borderColor: '#58CC02',
-        backgroundColor: '#E8F5E9',
+        borderColor: '#C8ACD6',
+        backgroundColor: '#433D8B',
     },
     mcOptionCorrect: {
-        borderColor: '#58CC02',
-        backgroundColor: '#58CC02',
+        borderColor: '#C8ACD6',
+        backgroundColor: '#5A4FA3',
     },
     mcOptionIncorrect: {
-        borderColor: '#FF3B30',
-        backgroundColor: '#FF3B30',
+        borderColor: '#FF6B6B',
+        backgroundColor: '#8B4A6B',
     },
     mcOptionText: {
         fontSize: 18,
-        color: '#333',
+        color: '#FFFFFF',
         fontWeight: '500',
         flex: 1,
     },
@@ -1313,32 +1375,32 @@ const styles = StyleSheet.create({
     builderTitle: {
         fontSize: 22,
         fontWeight: '600',
-        color: '#333',
+        color: '#FFFFFF',
         marginBottom: 16,
     },
     translationHint: {
-        backgroundColor: '#E3F2FD',
+        backgroundColor: '#433D8B',
         padding: 16,
         borderRadius: 12,
         marginBottom: 20,
         borderLeftWidth: 4,
-        borderLeftColor: '#1CB0F6',
+        borderLeftColor: '#C8ACD6',
     },
     translationHintLabel: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#666',
+        color: '#C8ACD6',
         marginBottom: 6,
     },
     translationHintText: {
         fontSize: 18,
-        color: '#333',
+        color: '#FFFFFF',
         fontStyle: 'italic',
         lineHeight: 26,
     },
     selectedWordsContainer: {
         minHeight: 100,
-        backgroundColor: '#F8F9FA',
+        backgroundColor: '#2E236C',
         borderRadius: 16,
         padding: 20,
         marginBottom: 20,
@@ -1346,20 +1408,23 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         gap: 12,
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#433D8B',
     },
     placeholderText: {
         fontSize: 16,
-        color: '#999',
+        color: '#C8ACD6',
+        opacity: 0.6,
         fontStyle: 'italic',
     },
     selectedWord: {
-        backgroundColor: '#58CC02',
+        backgroundColor: '#C8ACD6',
         paddingHorizontal: 16,
         paddingVertical: 12,
         borderRadius: 20,
     },
     selectedWordText: {
-        color: '#fff',
+        color: '#17153B',
         fontSize: 16,
         fontWeight: '600',
     },
@@ -1370,33 +1435,29 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     wordButton: {
-        backgroundColor: '#fff',
+        backgroundColor: '#2E236C',
         paddingHorizontal: 20,
         paddingVertical: 14,
         borderRadius: 25,
         borderWidth: 2,
-        borderColor: '#E5E5E5',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
+        borderColor: '#433D8B',
     },
     wordButtonSelected: {
-        backgroundColor: '#E5E5E5',
-        borderColor: '#999',
+        backgroundColor: '#433D8B',
+        borderColor: '#5A4FA3',
         opacity: 0.5,
     },
     wordButtonText: {
         fontSize: 16,
-        color: '#333',
+        color: '#FFFFFF',
         fontWeight: '500',
     },
     wordButtonTextSelected: {
-        color: '#999',
+        color: '#C8ACD6',
+        opacity: 0.6,
     },
     submitButton: {
-        backgroundColor: '#58CC02',
+        backgroundColor: '#C8ACD6',
         paddingVertical: 18,
         borderRadius: 16,
         alignItems: 'center',
@@ -1407,10 +1468,11 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     submitButtonDisabled: {
-        backgroundColor: '#CCCCCC',
+        backgroundColor: '#433D8B',
+        opacity: 0.5,
     },
     submitButtonText: {
-        color: '#fff',
+        color: '#17153B',
         fontSize: 18,
         fontWeight: 'bold',
     },
@@ -1420,7 +1482,7 @@ const styles = StyleSheet.create({
     },
     encouragementText: {
         fontSize: 18,
-        color: '#2E7D32',
+        color: '#FFFFFF',
         textAlign: 'center',
         fontWeight: '700',
     },
@@ -1428,10 +1490,10 @@ const styles = StyleSheet.create({
     errorFeedbackContainer: {
         marginTop: 20,
         padding: 20,
-        backgroundColor: '#FFF5F5',
+        backgroundColor: '#5A4FA3',
         borderRadius: 16,
         borderWidth: 2,
-        borderColor: '#FFE0E0',
+        borderColor: '#8B4A6B',
         alignItems: 'center',
     },
     errorIconContainer: {
@@ -1439,38 +1501,38 @@ const styles = StyleSheet.create({
     },
     incorrectText: {
         fontSize: 18,
-        color: '#FF3B30',
+        color: '#FFB6B6',
         textAlign: 'center',
         marginBottom: 12,
         fontWeight: '700',
     },
     correctSentenceLabel: {
         fontSize: 14,
-        color: '#666',
+        color: '#C8ACD6',
         textAlign: 'center',
         marginBottom: 8,
         fontWeight: '500',
     },
     // Box container for correct sentence - more visually appealing
     correctSentenceBox: {
-        backgroundColor: '#fff',
+        backgroundColor: '#2E236C',
         padding: 16,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#E5E5E5',
+        borderColor: '#433D8B',
         marginBottom: 16,
         width: '100%',
     },
     correctSentenceText: {
         fontSize: 16,
-        color: '#333',
+        color: '#FFFFFF',
         textAlign: 'center',
         fontStyle: 'italic',
         fontWeight: '500',
     },
     // Improved retry button - better styling, no weird blue
     retryButton: {
-        backgroundColor: '#58CC02',
+        backgroundColor: '#C8ACD6',
         paddingVertical: 14,
         paddingHorizontal: 32,
         borderRadius: 25,
@@ -1487,14 +1549,14 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
     retryButtonText: {
-        color: '#fff',
+        color: '#17153B',
         fontSize: 16,
         fontWeight: '700',
     },
     correctText: {
         marginTop: 16,
         fontSize: 16,
-        color: '#58CC02',
+        color: '#C8ACD6',
         textAlign: 'center',
         fontWeight: '600',
     },
@@ -1506,7 +1568,7 @@ const styles = StyleSheet.create({
     matchTitle: {
         fontSize: 22,
         fontWeight: '600',
-        color: '#333',
+        color: '#FFFFFF',
         marginBottom: 24,
     },
     matchColumns: {
@@ -1519,36 +1581,31 @@ const styles = StyleSheet.create({
     matchColumnTitle: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#333',
+        color: '#FFFFFF',
         marginBottom: 12,
     },
     matchItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: '#2E236C',
         padding: 16,
         borderRadius: 12,
         marginBottom: 12,
         borderWidth: 2,
-        borderColor: 'transparent',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
+        borderColor: '#433D8B',
     },
     matchItemSelected: {
-        borderColor: '#1CB0F6',
-        backgroundColor: '#E3F2FD',
+        borderColor: '#C8ACD6',
+        backgroundColor: '#433D8B',
     },
     matchItemMatched: {
-        backgroundColor: '#E8F5E9',
-        borderColor: '#58CC02',
+        backgroundColor: '#5A4FA3',
+        borderColor: '#C8ACD6',
     },
     matchText: {
         fontSize: 16,
-        color: '#333',
+        color: '#FFFFFF',
         fontWeight: '500',
     },
     completionContainer: {
@@ -1560,18 +1617,18 @@ const styles = StyleSheet.create({
     completionTitle: {
         fontSize: 32,
         fontWeight: 'bold',
-        color: '#333',
+        color: '#FFFFFF',
         marginTop: 24,
         marginBottom: 12,
     },
     completionSubtitle: {
         fontSize: 18,
-        color: '#666',
+        color: '#C8ACD6',
         textAlign: 'center',
         marginBottom: 40,
     },
     completeButton: {
-        backgroundColor: '#58CC02',
+        backgroundColor: '#C8ACD6',
         paddingVertical: 18,
         paddingHorizontal: 40,
         borderRadius: 25,
@@ -1585,7 +1642,7 @@ const styles = StyleSheet.create({
         elevation: 6,
     },
     completeButtonText: {
-        color: '#fff',
+        color: '#17153B',
         fontSize: 18,
         fontWeight: 'bold',
         marginRight: 8,
@@ -1596,24 +1653,24 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         padding: 40,
-        backgroundColor: '#F8F9FA',
+        backgroundColor: '#17153B',
     },
     notFoundTitle: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#333',
+        color: '#FFFFFF',
         marginTop: 24,
         marginBottom: 12,
     },
     notFoundSubtitle: {
         fontSize: 16,
-        color: '#666',
+        color: '#C8ACD6',
         textAlign: 'center',
         marginBottom: 40,
         lineHeight: 24,
     },
     backToLessonsButton: {
-        backgroundColor: '#58CC02',
+        backgroundColor: '#C8ACD6',
         paddingVertical: 16,
         paddingHorizontal: 32,
         borderRadius: 25,
@@ -1627,7 +1684,7 @@ const styles = StyleSheet.create({
         elevation: 6,
     },
     backToLessonsButtonText: {
-        color: '#fff',
+        color: '#17153B',
         fontSize: 18,
         fontWeight: 'bold',
         marginLeft: 8,

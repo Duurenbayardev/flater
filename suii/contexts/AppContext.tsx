@@ -10,6 +10,7 @@ interface UserProgress {
     lastPracticeDate: string | null;
     xp: number;
     memorizedWords: string[]; // Array of unique words user has learned (format: "english|mongolian")
+    hearts: number; // Number of hearts (lives) remaining
 }
 
 interface AppContextType {
@@ -20,6 +21,7 @@ interface AppContextType {
     completeTest: (level: number) => void;
     completeLesson: (lessonId: string, vocabWords?: Array<{ english: string; mongolian: string }>) => void;
     updateStreak: () => void;
+    loseHeart: () => void; // Decrement hearts when user answers incorrectly
     logout: () => Promise<void>;
     setNewSignup: (value: boolean) => void;
 }
@@ -32,7 +34,8 @@ const defaultProgress: UserProgress = {
     streak: 0,
     lastPracticeDate: null,
     xp: 0,
-    memorizedWords: ['nigger'],
+    memorizedWords: [],
+    hearts: 5, // Start with 5 hearts
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -56,6 +59,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 // Ensure memorizedWords exists (for backward compatibility with old saved data)
                 if (!parsedProgress.memorizedWords) {
                     parsedProgress.memorizedWords = [];
+                }
+                // Ensure hearts exists (for backward compatibility)
+                if (parsedProgress.hearts === undefined || parsedProgress.hearts === null) {
+                    parsedProgress.hearts = 5;
                 }
                 setUserProgress(parsedProgress);
             }
@@ -147,6 +154,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         saveProgress(newProgress);
     };
 
+    /**
+     * Lose a heart when user answers incorrectly
+     * Hearts cannot go below 0
+     */
+    const loseHeart = () => {
+        if (userProgress.hearts > 0) {
+            const newProgress = {
+                ...userProgress,
+                hearts: userProgress.hearts - 1,
+            };
+            setUserProgress(newProgress);
+            saveProgress(newProgress);
+        }
+    };
+
     const setNewSignup = (value: boolean) => {
         setIsNewSignup(value);
         // When setting as new signup, ensure test is not marked as completed
@@ -178,6 +200,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 completeTest,
                 completeLesson,
                 updateStreak,
+                loseHeart,
                 logout,
                 setNewSignup,
             }}

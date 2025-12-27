@@ -5,6 +5,15 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import Animated, { FadeInDown, Layout } from 'react-native-reanimated';
 import { useApp } from '../../contexts/AppContext';
 
+// Dark theme colors for each section - distinct darker colors
+const sectionColors = [
+    '#6B5FBB', // Purple-blue
+    '#4A7FA3', // Deep blue
+    '#5A8F7B', // Muted teal-green
+    '#8D6FAB', // Muted purple-pink
+    '#7C6F9B', // Light purple-pink
+];
+
 const sections = [
     {
         id: 1,
@@ -103,24 +112,18 @@ export default function LessonsScreen() {
 
     return (
         <View style={styles.container}>
-            <ScrollView
-                style={styles.content}
-                contentContainerStyle={{ paddingTop: 110, paddingBottom: 20 }}
-                bounces={false}
-                showsVerticalScrollIndicator={false}
-                decelerationRate="normal"
-                scrollEventThrottle={16}
-            >
+            <ScrollView style={styles.content} contentContainerStyle={{ paddingTop: 110, paddingBottom: 20 }}>
                 {sections.map((section) => {
                     const completedUnits = getCompletedUnits(section.id);
                     const totalUnits = getTotalUnits(section.id);
                     const progress = (completedUnits / totalUnits) * 100;
                     const isExpanded = expandedSection === section.id;
+                    const sectionColor = sectionColors[(section.id - 1) % sectionColors.length];
 
                     return (
                         <Animated.View
                             key={section.id}
-                            style={styles.sectionCard}
+                            style={[styles.sectionCard, { backgroundColor: sectionColor }]}
                             layout={Layout.springify()}
                         >
                             <TouchableOpacity
@@ -129,7 +132,7 @@ export default function LessonsScreen() {
                                 activeOpacity={0.7}
                             >
                                 <View style={styles.sectionIconContainer}>
-                                    <Ionicons name={section.iconName as any} size={36} color="#58CC02" />
+                                    <Ionicons name={section.iconName as any} size={48} color="#FFFFFF" />
                                 </View>
                                 <View style={styles.sectionInfo}>
                                     <Text style={styles.sectionTitle}>{section.title}</Text>
@@ -137,13 +140,14 @@ export default function LessonsScreen() {
                                         <View style={[styles.progressBar, { width: `${progress}%` }]} />
                                     </View>
                                     <Text style={styles.progressText}>
-                                        {completedUnits} of {totalUnits} units completed
+                                        {completedUnits}/{totalUnits} units
                                     </Text>
                                 </View>
                                 <Ionicons
                                     name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                                    size={28}
-                                    color="#58CC02"
+                                    size={24}
+                                    color="#FFFFFF"
+                                    style={{ marginLeft: 12 }}
                                 />
                             </TouchableOpacity>
 
@@ -159,7 +163,7 @@ export default function LessonsScreen() {
                                         return (
                                             <Animated.View
                                                 key={unit.id}
-                                                entering={FadeInDown.delay(index * 50).duration(300)}
+                                                entering={FadeInDown.delay(index * 30).duration(300)}
                                                 layout={Layout.springify()}
                                             >
                                                 <TouchableOpacity
@@ -171,15 +175,6 @@ export default function LessonsScreen() {
                                                     activeOpacity={0.7}
                                                 >
                                                     <View style={styles.unitContent}>
-                                                        <View style={styles.unitIcon}>
-                                                            {isCompleted ? (
-                                                                <Ionicons name="checkmark-circle" size={32} color="#58CC02" />
-                                                            ) : (
-                                                                <View style={styles.unitNumber}>
-                                                                    <Text style={styles.unitNumberText}>{unit.id}</Text>
-                                                                </View>
-                                                            )}
-                                                        </View>
                                                         <View style={styles.unitInfo}>
                                                             <Text style={[
                                                                 styles.unitTitle,
@@ -189,7 +184,11 @@ export default function LessonsScreen() {
                                                             </Text>
                                                             <Text style={styles.unitSubtitle}>{unit.lessons} lessons</Text>
                                                         </View>
-                                                        <Ionicons name="play-circle" size={32} color={isCompleted ? '#58CC02' : '#999'} />
+                                                        {isCompleted ? (
+                                                            <Ionicons name="checkmark-circle" size={24} color="#C8ACD6" />
+                                                        ) : (
+                                                            <Ionicons name="play-circle" size={24} color="#433D8B" />
+                                                        )}
                                                     </View>
                                                 </TouchableOpacity>
                                             </Animated.View>
@@ -208,118 +207,102 @@ export default function LessonsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8F9FA',
+        backgroundColor: '#17153B',
     },
     content: {
         flex: 1,
-        padding: 20,
+        padding: 16,
     },
     sectionCard: {
-        backgroundColor: '#fff',
-        borderRadius: 24,
-        marginBottom: 20,
+        borderRadius: 20,
+        marginBottom: 16,
         overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.15,
-        shadowRadius: 16,
-        elevation: 8,
     },
     sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 24,
+        padding: 20,
+        minHeight: 120,
     },
     sectionIconContainer: {
         width: 80,
         height: 80,
-        borderRadius: 40,
-        backgroundColor: '#E8F5E9',
+        borderRadius: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.25)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 20,
     },
     sectionInfo: {
         flex: 1,
+        marginLeft: 20,
+        alignItems: 'flex-end',
     },
     sectionTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 12,
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#FFFFFF',
+        marginBottom: 10,
+        textAlign: 'right',
     },
     progressBarContainer: {
-        height: 8,
-        backgroundColor: '#E5E5E5',
-        borderRadius: 4,
-        marginBottom: 8,
+        height: 6,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        borderRadius: 3,
+        marginBottom: 6,
         overflow: 'hidden',
+        width: '100%',
     },
     progressBar: {
         height: '100%',
-        backgroundColor: '#58CC02',
-        borderRadius: 4,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 3,
     },
     progressText: {
-        fontSize: 14,
-        color: '#999',
+        fontSize: 12,
+        color: '#FFFFFF',
+        opacity: 0.9,
         fontWeight: '500',
+        textAlign: 'right',
     },
     unitsContainer: {
-        paddingHorizontal: 24,
-        paddingBottom: 24,
+        paddingHorizontal: 20,
+        paddingBottom: 20,
+        paddingTop: 12,
+        backgroundColor: 'rgba(23, 21, 59, 0.5)',
     },
     unitCard: {
-        backgroundColor: '#F8F9FA',
-        borderRadius: 18,
-        marginTop: 16,
-        borderWidth: 2,
-        borderColor: '#E5E5E5',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 4,
-        elevation: 3,
+        backgroundColor: '#2E236C',
+        borderRadius: 12,
+        marginTop: 8,
+        borderWidth: 1,
+        borderColor: '#433D8B',
     },
     unitCardCompleted: {
-        backgroundColor: '#E8F5E9',
-        borderColor: '#58CC02',
+        backgroundColor: '#433D8B',
+        borderColor: '#C8ACD6',
     },
     unitContent: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 20,
-    },
-    unitIcon: {
-        marginRight: 20,
-    },
-    unitNumber: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: '#E5E5E5',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    unitNumberText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#999',
+        padding: 16,
+        justifyContent: 'space-between',
     },
     unitInfo: {
         flex: 1,
     },
     unitTitle: {
-        fontSize: 18,
+        fontSize: 15,
         fontWeight: '600',
-        color: '#333',
-        marginBottom: 6,
+        color: '#FFFFFF',
+        marginBottom: 4,
     },
     unitTitleCompleted: {
-        color: '#58CC02',
+        color: '#C8ACD6',
     },
     unitSubtitle: {
-        fontSize: 14,
-        color: '#999',
+        fontSize: 12,
+        color: '#FFFFFF',
+        opacity: 0.7,
+        fontWeight: '400',
     },
 });
